@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SAE Hands-On Tutorial</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div id="container">
+            <h1>SAE Hands-On Tutorial</h1>
+            <!--Table of Contents-->
+            <div id="navbar">
+                <h3>Contents</h3>
+                <ol type="1">
+                    <li><a href="#Simics">Simics</a></li>
+                    <ol type="A">
+                        <li><a href="#SimicsWorkspace">Simics Workspace</a></li>
+                        <li><a href="#UsingSimics">Using Simics</a></li>
+                        <ol type="a">
+                            <li><a href="#InstallOS">Installing an Operating System</a></li>
+                            <li><a href="#Booting">Booting</a></li>
+                            <li><a href="#ModifyingDiskImage">Modifying the Disk Image</a></li>
+                        </ol>
+                    </ol>
+                    <li><a href="#SAE">SAE</a></li>
+                    <ol type="A">
+                        <li><a href="#Checkpointing">Checkpointing</a></li>
+                        <li><a href="#FirstZtool">First ztool</a></li>
+                        <ol type="a">
+                            <li><a href="#Compiling">Compiling</a></li>
+                            <li><a href="#InstructionCount">Instruction Count</a></li>
+                            <li><a href="#Running">Running</a></li>
+                        </ol>
+                        <li><a href="#ExtendingZtool">Extending Your ztool</a></li>
+                        <ol type="a">
+                            <li><a href="#KernelUserSpace">Kernel and User Space</a></li>
+                            <li><a href="#SystemCalls">System Calls</a></li>
+                            <li><a href="#DistinguishingSystemCalls">Distinguishing System Calls</a></li>
+                        </ol>
+                        <li><a href="#MultiCore">Multi-Core ztool</a></li>
+                        <li><a href="#MultiSystem">Multi-System ztool</a></li>
+                    </ol>
+                </ol>
+                <br />
+                <h3>Login Credentials</h3>
+                VirtualBox User Name: <span class="inline-code">tutorial</span> <br />
+                VirtualBox Password: <span class="inline-code">simics</span> <br />
+            </div>
+
+            <div id="content">
+                <!--Content-->
+                <h2 id="Simics">Simics</h2>
+
+                <h3 id="SimicsWorkspace">Simics Workspace</h3>
+                <p>Simics has been pre-installed on the provided VirtualBox Lubuntu image, so all you need to do is create a Simics workspace.  From a terminal window, navigate to the <span class="inline-code">SAE/</span> directory, create your workspace, and initialize it:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:~$ cd SAE/ <br />
+                tutorial@VirtualBox:SAE$ mkdir workspace <br />
+                tutorial@VirtualBox:SAE$ cd workspace/ <br />
+                tutorial@VirtualBox:workspace$ /opt/simics/simics-5/simics-5.0.80/bin/project-setup <br />
+                </div>
+
+                <h3 id="UsingSimics">Using Simics</h3>
+                <p>You are now ready to start using Simics from your workspace.  For your convenience, though, we have provided some files to help you get started.  Copy them from the <span class="inline-code">master_files/</span> directory:</p>
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cp -r ../master_files/scripts/ . <br />
+                tutorial@VirtualBox:workspace$ cp -r ../master_files/isos/ . <br />
+                </div>
+
+                <h4 id="InstallOS">Installing an Operating System</h4>
+
+                <p>Because Simics provides a complete virtual hardware environment, installing an operating system proceeds much like it does when installing to a real system.  Since Simics lacks a physical optical drive and hard disk, though, we will need to provide specifics about these devices through a Simics script.</p>
+                <p>We have provided a basic OS <a href="scripts/install_centos68.simics" target="_blank">installation script</a> for you to download.  You have already copied this script into your <span class="inline-code">scripts/</span> directory.  Launch OS installation:</p>
+                <!--Save this file in the <span class="inline-code">scripts/</span> directory of your Simics workspace.</p>-->
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics scripts/install_centos68.simics <br />
+                </div>
+
+                <p>This will launch Simics, telling it to run using the information given in the script.  The first thing the script does is change the installation command so that this will be text-only.  After that, it is up to you to continue the installation.</p>
+
+                <p>For the sake of time, we ask you not to continue with installation now.  Interrupt Simics by switching to the host terminal and pressing <span class="keystroke">Ctrl+C</span> and entering the command <span class="inline-code">quit</span>.  We have provided the final disk image, which you can copy from <span class="inline-code">master_files/</span>:</p>
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cp -r ../master_files/disk_images/ . <br />
+                </div>
+
+                <p>For complete instructions on installing the OS, see <a href="install.html">here</a>.</p>
+
+                <h4 id="Booting">Booting</h4>
+
+                <p>Now that you have installed CentOS and moved its disk image into the 'disk_images' directory, you are ready to boot into the newly installed operating system.  We will use a <a href="scripts/boot_centos68.simics" target="_blank">new script</a> for this purpose, which you have already copied over to your workspace as <span class="inline-code">scripts/boot_centos68.simics</span>.</p>
+                <p>One of the nice features of Simics is its scripting abilities.  You will edit the boot script to automatically log in to the new operating system.  This is done using a 'script-branch', which is a set of instructions for Simics to follow in interacting with the virtual system.</p>
+                <ol>
+                    <li>In the file <span class="inline-code">scripts/boot_centos68.simics</span>, following the line <span class="inline-code">run-command-file "%simics%/targets/x86-x58-ich10/viper-fedora-14.simics"</span> (line&nbsp;15) add the lines</li>
+
+                    <div class="code">
+                    local $con = $host_name.console.con <br />
+                    local $vga = $host_name.mb.gpu.vga <br />
+                    </div>
+
+                    These two lines allow your script to interact with the simulated system's console.
+
+                    <li>Create a script branch:</li>
+
+                    <div class="code">
+                    script-branch { <br />
+                     <br />
+                    } <br />
+                    </div>
+
+                    <li>Inside of the script-branch braces, add the following lines to automatically wait for the proper promtps and login to the Simics system:</li>
+
+                    <div class="code">
+                    $vga.wait-for-string "dhcp0 login: " <br />
+                    $con.input "root\n" <br />
+                    $vga.wait-for-string "Password:" <br />
+                    $con.input "simics\n" <br />
+                    </div>
+
+                    <li>Save and close the file.</li>
+                </ol>
+
+                <div class="note">If you are having trouble getting these code pieces together, you can see the completed script <a href="scripts/boot_centos68_1.simics" target="_blank">here</a>.</div>
+
+                <p>You can now boot the operating system in Simics using the command</p>
+
+                <div class="command">
+                ./simics scripts/boot_centos68.simics <br />
+                </div>
+
+                <p>Feel free to play around with the simulated operating system.  When you are done, you can quit by going back to the host terminal, interrupting the simulation with <span class="keystroke">Ctrl+C</span> to activate the Simics command line, and issuing the command <span class="inline-code">quit</span> or <span class="inline-code">q</span> for short.</p>
+
+                <h4 id="ModifyingDiskImage">Modifying the Disk Image</h4>
+
+                <p>By default, Simics uses a copy-on-write environment: when you make changes to the disk within Simics, those changes are discarded as soon as Simics quits.  Sometimes it is necessary to modify the disk image permanently.</p>
+
+                <p>There are two ways to modify the disk image.  The first is to make Simics' changes persistent, and the second is to modify the disk image directly.  We will use the second to copy the <span class="inline-code">swaptions</span> benchmark from the PARSEC benchmark suite into the virtual disk.</p>
+
+                <ol>
+                    <li>Turn the Simics disk image (craff format) into a raw disk image:</li>
+                    <div class="command">
+                    tutorial@VirtualBox:workspace$ bin/craff -d -o disk_images/centos68.raw disk_images/centos68.craff <br />
+                    </div>
+                    <li>CentOS uses LVM partitioning, which takes a bit of work to mount.  Enter the following commands:</li>
+
+                    <div class="command">
+                    tutorial@VirtualBox:workspace$ sudo losetup /dev/loop0 disk_images/centos68.raw <br />
+                    tutorial@VirtualBox:workspace$ sudo kpartx -a /dev/loop0 <br />
+                    tutorial@VirtualBox:workspace$ sudo vgscan <br />
+                    tutorial@VirtualBox:workspace$ sudo vgchange -ay VolGroup <br />
+                    tutorial@VirtualBox:workspace$ sudo mount /dev/mapper/VolGroup-lv_root /mnt/ <br />
+                    </div>
+
+                    <li>Make your changes:</li>
+
+                    <div class="command">
+                    tutorial@VirtualBox:workspace$ pushd /mnt/ <br />
+                    tutorial@VirtualBox:mnt$ cd home/ <br />
+                    tutorial@VirtualBox:home$ sudo cp -r ~/SAE/master_files/parsec/ . <br />
+                    tutorial@VirtualBox:home$ popd <br />
+                    </div>
+
+                    <li>Unmount the disk image:</li>
+
+                    <div class="command">
+                    tutorial@VirtualBox:workspace$ sudo umount /mnt/ <br />
+                    tutorial@VirtualBox:workspace$ sudo vgchange -a n /dev/VolGroup <br />
+                    tutorial@VirtualBox:workspace$ sudo kpartx -d /dev/loop0 <br />
+                    tutorial@VirtualBox:workspace$ sudo losetup --detach /dev/loop0 <br />
+                    </div>
+
+                    <li>Convert from raw back to the craff disk image format:</li>
+
+                    <div class="command">
+                    tutorial@VirtualBox:workspace$ bin/craff -o disk_images/parsec.craff disk_images/centos68.raw <br />
+                    tutorial@VirtualBox:workspace$ rm disk_images/centos68.raw <br />
+                    tutorial@VirtualBox:workspace$ mv disk_images/parsec.craff disk_images/centos68.craff <br />
+                    </div>
+                </ol>
+
+                <p>Now when you boot into CentOS using Simics, you will find your copied files under <span class="inline-code">/home/parsec/</span>.</p>
+
+                <h2 id="SAE">SAE</h2>
+
+                <p style="margin-left:-25px">You are now ready to start using Intel SAE.  We will begin by building a simple instruction-counting tool.  From there, we will extend the tool to distinguish between kernel and user space.  Subsequently, we will restrict it to only count the instructions in system calls.  And finally, we will differentiate between different system calls.</p>
+
+                <p style="margin-left:-25px">We will then explore some of the more powerful features of SAE, in particular supporting multi-core and multi-system simulations.</p>
+
+                <h3 id="Checkpointing">Checkpointing</h3>
+
+                <p>Before we begin writing a ztool, we need to cover checkpointing.  Booting the operating system in Simics is very fast but it still takes a few minutes.  Since we are not going to be studying OS boot today, we would like to save that time.  We will create a checkpoint from which we can resume for all future steps.</p>
+
+                <p>Launching SAE is a little different than launching Simics.  Use the following command to begin booting in SAE:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/boot_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>Once the OS has booted and the script has logged in, interrupt simulation by pressing <span class="keystroke">Ctrl+C</span> at the host terminal.  This will bring up a Simics command prompt, whereat you should enter the command:</p>
+
+                <div class="command">
+                simics&gt; write-configuration BootedOS
+                </div>
+
+                <p>When that has finished, <span class="inline-code">quit</span> Simics.  From now on, you will be able to load the checkpointed state and bypass the boot process.  For this purpose, we have provided you with another script&mdash;<span class="inline-code">resume_centos68.simics</span>, which you have already copied into your <span class="inline-code">scripts/</span> directory.  Resume from the checkpoint with the command</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/resume_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>This will bring up the OS just as you left it.</p>
+
+                <h3 id="FirstZtool">First ztool</h3>
+
+                <p>For your first ztool, you will build a simple instruction counter.  We have provided you with a <a href="code/inst_count.cpp" target="_blank">template</a> from which to start.  Copy it into your workspace:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cp -r ../master_files/tools/ . <br />
+                </div>
+
+                <p>This template is a fully functional ztool...that doesn't do anything.  Nevertheless, it is an important starting point.</p>
+
+                <h4 id="Compiling">Compiling</h4>
+
+                <p>With any program, it is good practice to compile regularly to ensure that you catch any bugs early.  We will compile our very simple ztool now to see that it compiles properly.  SAE provides a powerful build system that is captured in some very simple files.  We have already provided a makefile which reads the names of your ztools from the file <span class="inline-code">tools.names</span>.  Open that file and indicate the name of your tool (<span class="inline-code">inst_count</span>).</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cd tools/<br />
+                tutorial@VirtualBox:tools$ vim tools.names<br />
+                </div>
+
+                <p>Now change the line</p>
+                <div class="code">
+                TOOLS = <br />
+                </div>
+                <p>to instead read</p>
+                <div class="code">
+                TOOLS = inst_count <br />
+                </div>
+
+                <p>Now compile your ztool:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:tools$ make inst_count <br />
+                </div>
+
+                <p>Compilation should finish with the message <span class="inline-code">inst_count was built successfully.</span></p>
+
+                <h4 id="InstructionCount">Instruction Count</h4>
+
+                <p>It is now time to add some real content to our tool.  Open <span class="inline-code">inst_count.cpp</span> with your favorite editor.</p>
+
+                <p>There are a couple variables we will be using repeatedly, so let's declare them statically.  Update your code as follows:</p>
+
+                <div class="note">When new code is shown in the context of existing code, the new code will be highlighted in magenta.</div>
+
+                <!--<p>Every ztool is called by the function <span class="inline-code">ztool_init()</span>, so we will start our work there.  SAE will need a handle to refer to this ztool, so we provide that.  Add the following line in the <span class="inline-code">ztool_init()</span> function:</p>-->
+
+                <div class="code">
+                ... <br />
+                using namespace std; <br />
+                 <br />
+                <span class="changes">static ztool_handle_t zhandle; <br />
+                static ztool_config_key_t default_config_key;</span> <br />
+                 <br />
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">zhandle = ztool_init_get_tool_handle(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;default_config_key = ztool_init_get_default_config_key(handle);</span> <br />
+                } <br />
+                </div>
+
+                <p>SAE works by using callback functions.  We are going to register a callback function for instruction execution.  Every time an instruction is executed in the virtual system (CentOS), SAE will call the callback function we give it.  First let's create the callback function.  Add the following function and static variable:</p>
+
+                <div class="code">
+                ... <br />
+                using namespace std; <br />
+                 <br />
+                static ztool_handle_t zhandle; <br />
+                static ztool_config_key_t default_config_key;</span> <br />
+                 <br />
+                <span class="changes">static uint64_t icount = 0; <br />
+                 <br />
+                void count_inst(ztool_state_handle_t shandle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;icount++; <br />
+                }</span> <br />
+                 <br />
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                {...} <br />
+
+                </div>
+
+                <p>Now we need to tell SAE how to use that callback.  Udpate <span class="inline-code">ztool_init()</span> to read:</p>
+
+                <div class="code">
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;zhandle = ztool_init_get_tool_handle(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;default_config_key = ztool_init_get_default_config_key(handle);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_instruction_exe_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = count_inst; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_INSTRUCTION_WHEN_BEFORE; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = default_config_key; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_instruction_exe_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}</span> <br />
+                } <br />
+                </div>
+
+                <p>This code tells SAE to call the function <span class="inline-code">count_inst()</span>before executing each instruction, where <span class="inline-code">count_inst()</span> increments the running instruction count.</p>
+                <div class="note">This would be a good point to save the file and ensure that your ztool still compiles.</div>
+                <p>This ztool is now doing something meaningful: it is keeping a running count of all the instructions executed by the system.  However, that count is not very useful until it gets reported.  Let's update the ztool now to print out the final count.  Add the following lines to define a function for printing out the instruction count:</p>
+
+                <div class="code">
+                void fini(ztool_fini_handle_t fhandle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;cout &lt;&lt; "Total instructions: " &lt;&lt; icount &lt;&lt; endl; <br />
+                } <br />
+                </div>
+
+                <p>Add the following lines at the bottom of the <span class="inline-code">ztool_init()</span> function:</p>
+
+                <div class="code">
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;zhandle = ztool_init_get_tool_handle(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;default_config_key = ztool_init_get_default_config_key(handle);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_fini_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = fini; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = default_config_key; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_fini_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}</span> <br />
+                } <br />
+                </div>
+
+                <p>Save and close the file.  You now have a full ztool!  Compile and ensure there are no bugs:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:tools$ make inst_count<br />
+                </div>
+
+                <p></p>
+
+                <div class="note">If you are having trouble getting these code pieces together, you can see the completed code <a href="code/inst_count_1.cpp" target="_blank">here</a>.</div>
+
+                <h4 id="Running">Running</h4>
+
+                <p>Now that your ztool has successfully compiled, it's time to see it in action.  Return to the <span class="inline-code">workspace/</span> directory and open the checkpoint-resume script:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:tools$ cd ../ <br />
+                tutorial@VirtualBox:workspace$ vim scripts/resume_centos68.simics <br />
+                </div>
+
+                <p>While it is possible to manually load and unload ztools in SAE from the Simics command line, this method is not very efficient.  Instead, we will be using our Simics boot script to control the loading and unloading of our ztool.  Fill in the <span class="inline-code">script-branch</span> in your script as follows:</p>
+
+                <div class="code">
+                script-branch { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">$con.input "cd /home/parsec/\n" <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Load the inst_count ztool <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;$ztool1 = (vcpu-command "ztool-load tools/obj/intel64-opt/inst_count.so") <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Run swaptions <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;$con.input "./run_2threads.sh\n" <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Unload the ztool <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;$vga.wait-for-string "swaptions 2-thread done" <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;vcpu-command "ztool-unload " + $ztool1 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Quit <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;quit</span> <br />
+                } <br />
+                </div>
+
+                <p>These new additions tell the virtual machine to switch to the <span class="inline-code">parsec/</span> directory you copied in earlier and run the <span class="inline-code">swaptions</span> benchmark.  Just before running the benchmark, though, the script tells SAE to load the ztool; once the benchmark finishes (when we see the line <span class="inline-code">swaptions&nbsp;2-thread&nbsp;done</span>), the ztool is unloaded.  Simulation finishes at that point by telling Simics to quit.</p>
+
+                <!--<p>We also need to tell Simics to use SAE's software CPU, so update your script as follows:</p>
+
+                <div class="code">
+                &nbsp;&nbsp;&nbsp;&nbsp;# Quit <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;quit <br />
+                } <br />
+                <br />
+                vcpu-command jibe-enable <br />
+                <br />
+                # Run <br />
+                run <br />
+                </div>-->
+
+                <div class="note">If you need to, you can download the modified script <a href="scripts/resume_centos68_2.simics" target="_blank">here</a>.</div>
+
+                <p>Resume from the checkpoint once more to see your ztool in work:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/resume_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>Just before SAE finishes, you should see a printout in your native shell indicating the total instruction count from executing <span class="inline-code">swaptions</span>:</p>
+
+                <div class="output">
+                Total instructions: 979624808 <br />
+                </div>
+
+                <h3 id="ExtendingZtool">Extending Your ztool</h3>
+
+                <p>As exciting as it is to count instructions, SAE is capable of far more.  We will explore some of its power by gradually extending our ztool.</p>
+
+                <h4 id="KernelUserSpace">Kernel and User Space</h4>
+
+                <p>Our first extension will be to provide two different instruction counts: one for kernel-space and the other for user-space instructions.</p>
+
+                <p>Start by renaming your <span class="inline-code">icount</span> to <span class="inline-code">icount_user</span>.  Then create a second instruction counting variable; call this one <span class="inline-code">icount_kernel</span>.</p>
+
+                <p>To distinguish between user- and kernel-space instructions, we need to read from the CPU's CS register to determine the current privilege level (CPL).  You could create a boolean variable as follows:</p>
+
+                <div class="code">
+                // Get the CPL from CS register <br />
+                ztool_reg_val_t cs_val = ztool_state_seg_get_selector_val(shandle, XED_REG_CS); <br />
+                ztool_reg_val_t mask = 3; <br />
+                bool user_space = (cs_val & mask) == 3; <br />
+                </div>
+
+                <p>That code will need to go into your <span class="inline-code">count_inst()</span> function.  Obviously, you will need to add additional code to increment the proper instruction count.</p>
+
+                <div class="note">We are no longer giving you all the code.  How could you learn if we gave you all the answers?</div>
+
+                <p>When you are done, make sure that you update <span class="inline-code">fini()</span> to print out both counts.  Then compile and run it.  There should be no need to update the script.  Your output might look like the following:</p>
+
+                <div class="output">
+                Total user instructions: &nbsp;&nbsp;969662686 <br />
+                Total kernel instructions: 10034511
+                </div>
+
+                <h4 id="SystemCalls">System Calls</h4>
+
+                <p>Our next extension is going to leverage one of SAE's more powerful features&mdash;configuration keys&mdash;to limit instruction counting to only system calls.  At the same time, we will be introducing SAE's OS-awareness features.  We will start by looking at how to register a callback for system call events.</p>
+
+                <p>Our first two callback functions were for instruction execution and tool unloading.  We now register a callback for system calls.  To <span class="inline-code">ztool_init()</span> add the following two callback registrations.  They will be called just before and just after system calls are executed:</p>
+
+                <div class="code">
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;zhandle = ztool_init_get_tool_handle(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;default_config_key = ztool_init_get_default_config_key(handle);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = enter_syscall; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.os_event = ZTOOL_OS_STAGED_EVENT_SYSTEM_CALL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_OS_WHEN_RECONFIG_BEFORE; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = default_config_key; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = exit_syscall; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.os_event = ZTOOL_OS_STAGED_EVENT_SYSTEM_CALL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_OS_WHEN_RECONFIG_AFTER; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = default_config_key; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}</span> <br />
+                } <br />
+                </div>
+
+                <p>Obviously, we have to define the functions <span class="inline-code">enter_syscall()</span> and <span class="inline-code">exit_syscall()</span>.  Define <span class="inline-code">enter_syscall()</span> as follows:</p>
+
+                <div class="code">
+                void enter_syscall(ztool_os_staged_event_handle_t evhandle, void *data) <br />
+                { <br />
+                } <br />
+                </div>
+
+                <p>The definition of <span class="inline-code">exit_syscall()</span> will be similar.</p>
+
+                <p>The obvious way of completing this extension would be to create some static boolean that is set whenever <span class="inline-code">enter_syscall()</span> is called and cleared whenever <span class="inline-code">exit_syscall()</span> is called.  The function <span class="inline-code">count_inst()</span> would then check that boolean every time it is entered, only increment the instruction count if the value is set.</p>
+
+                <p>The problem with this approach is that the tool is doing all the work of calling the callback function for every instruction even though it does nothing the majority of the time.  We will seek a more elegant solution.</p>
+
+                <p>We turn to configuration keys for our elegant solution.  Until now, we have been relying solely on the default configuration key for each of our callbacks.  We will instead create our own configuration key which will allow us to selectively enable or disable any corresponding callback.  The code below shows the changes you should make to add&mdash;and use&mdash;your own configuration key.</p>
+
+                <div class="code">
+                using namespace std; <br />
+                 <br />
+                static ztool_handle_t zhandle; <br />
+                static ztool_config_key_t default_config_key; <br />
+                 <br />
+                <span class="changes">static ztool_config_key_t in_syscall_key;</span> <br />
+                 <br />
+                static uint64_t icount_user = 0; <br />
+                static uint64_t icount_kernel = 0; <br />
+                 <br />
+                ... <br />
+                 <br />
+                // Init function. Called by zsim. <br />
+                extern "C" void ztool_init(ztool_init_handle_t handle) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;zhandle = ztool_init_get_tool_handle(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;default_config_key = ztool_init_get_default_config_key(handle);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">// The key is disabled by default <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_config_alloc_key(zhandle, &amp;in_syscall_key);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_instruction_exe_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = count_inst; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_INSTRUCTION_WHEN_BEFORE; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = <span class="changes">in_syscall_key</span>; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_instruction_exe_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{...} <br />
+                <!--&nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = enter_syscall; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.os_event = ZTOOL_OS_STAGED_EVENT_SYSTEM_CALL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_OS_WHEN_RECONFIG_BEFORE; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = ztool_init_get_default_config_key(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = exit_syscall; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.os_event = ZTOOL_OS_STAGED_EVENT_SYSTEM_CALL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.when = ZTOOL_OS_WHEN_RECONFIG_AFTER; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = ztool_init_get_default_config_key(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_fini_desc_t desc; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = fini; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.config_key = ztool_init_get_default_config_key(handle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_fini_register_cb(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />-->
+                } <br />
+                </div>
+
+                <p>You have now created your own configuration key called <span class="inline-code">in_syscall_key</span> and initialized it.  Note that custom configuration keys are disabled by default.  In order for instruction counting to happen, we have to enable the configuration key.  We will do this in the <span class="inline-code">enter_syscall()</span> function.</p>
+
+                <div class="note">
+                Please note that when we registered <span class="inline-code">enter_syscall()</span> and <span class="inline-code">exit_syscall()</span>, we specified their <span class="inline-code">desc.when</span> values as <span class="inline-code">ZTOOL_OS_WHEN_<span style="font-weight: bold">RECONFIG</span>_BEFORE</span> and <span class="inline-code">ZTOOL_OS_WHEN_<span style="font-weight: bold">RECONFIG</span>_AFTER</span>, respectively.<br /><br />
+                If we were not going to use configuration keys, we would have used <span class="inline-code">ZTOOL_OS_WHEN_BEFORE</span> and <span class="inline-code">ZTOOL_OS_WHEN_AFTER</span> instead.  Using configuration keys requires that we use the <span class="inline-code">RECONFIG</span> values for <span class="inline-code">desc.when</span>.
+                </div>
+
+                <p>Enabling or disabling a configuration key requires a reconfiguration event callback.  Basically, that means that enabling or disabling a configuration key takes some fancy code, which you can copy from here:</p>
+
+                <div class="code">
+                <span class="changes">void count_enable(ztool_config_handle_t handle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_config_enable_key(in_syscall_key); <br />
+                } <br />
+                 <br />
+                void count_disable(ztool_config_handle_t handle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_config_disable_key(in_syscall_key); <br />
+                }</span> <br />
+                 <br />
+                void enter_syscall(ztool_os_staged_event_handle_t evhandle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">// Get the state handle <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_state_handle_t shandle = ztool_os_get_state_handle(evhandle.oshandle); <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;if (!ztool_config_is_key_enabled(in_syscall_key)) <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_desc_t desc; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = count_enable; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.shandle = shandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_initiate_reconfig_event(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}</span> <br />
+                } <br />
+                 <br />
+                void exit_syscall(ztool_os_staged_event_handle_t evhandle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">// Get the state handle <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_state_handle_t shandle = ztool_os_get_state_handle(evhandle.oshandle); <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;if (ztool_config_is_key_enabled(in_syscall_key)) <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_desc_t desc; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = count_disable; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.shandle = shandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_initiate_reconfig_event(&amp;desc); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}</span> <br />
+                } <br />
+                </div>
+
+                <p>While this code looks complicated, it is really doing something very simple.  The functions <span class="inline-code">enter_syscall()</span> and <span class="inline-code">exit_syscall()</span> are calling on SAE to immediately trigger reconfiguration events.  Those reconfiguration events call <span class="inline-code">count_enable()</span> and <span class="inline-code">count_disable()</span> to actually turn <span class="inline-code">in_syscall_key</span> on or off.</p>
+
+                <p>There is one more step before you can use this code.  Since it uses SAE's OS-awareness APIs, SAE needs to be made aware of the OS.  You will need to update your script:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ vim scripts/resume_centos68.simics <br />
+                </div>
+
+                <p>Update the script:</p>
+
+                <div class="command">
+                ... <br />
+                local $con = $host_name.console.con <br />
+                local $vga = $host_name.mb.gpu.vga <br />
+                 <br />
+                <span class="changes">$os_ztool = (vcpu-command "ztool-load ../zsim-16.12.14-external-ia32_intel64-lin/lib64/os-awareness.so ../centos68.cfg")</span> <br />
+                script-branch {...} <br />
+                ... <br />
+                </div>
+
+                <p>Save, compile, and give it a try:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cd tools/ <br />
+                tutorial@VirtualBox:workspace$ make inst_count <br />
+                tutorial@VirtualBox:workspace$ cd ../ <br />
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/resume_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>You should see output something like the following:</p>
+
+                <div class="output">
+                Total user instructions: &nbsp;&nbsp;&nbsp;787763 <br />
+                Total kernel instructions: 6004367 <br />
+                </div>
+
+                <h4 id="DistinguishingSystemCalls">Distinguishing System Calls</h4>
+
+                <p>The output from the latest version of your tool may surprise you: it has a significant number of user-space instructions, despite only running during system calls.  Let's see which system calls are contributing so many user-space instructions by breaking down the instruction counts on a per-syscall basis.</p>
+
+                <p>We will split the instruction counts to a separate C <span class="inline-code">struct</span> for each syscall.  Replace the existing instruction count variables with the following <span class="inline-code">struct</span> and <span class="inline-code">map</span>:</p>
+
+                <div class="code">
+                struct syscall_icount_t { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;uint64_t calls; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;uint64_t icount_user; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;uint64_t icount_kernel; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;syscall_icount_t() <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: calls(0), icount_user(0), icount_kernel(0) <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{} <br />
+                }; <br />
+                static map&lt;uint64_t,syscall_icount_t*&gt; syscall_icounts; <br />
+                </div>
+
+                <p>We will collect four pieces of information about each syscall:
+                <ol>
+                    <li>The number of times it is called.</li>
+                    <li>The number of user-space instructions it executes.</li>
+                    <li>The number of kernel-space instructions it executes.</li>
+                    <li>Its syscall number (this information is implicit in the <span class="inline-code">map</span>).</li>
+                </ol>
+                </p>
+
+                <p>Because syscalls' information is only available within the syscall-direct callbacks, we have to save the syscall number as a global variable:</p>
+
+                <div class="code">
+                struct syscall_icount_t {...}; <br />
+                static map&lt;uint64_t,syscall_icount_t*&gt; syscall_icounts; <br />
+                 <br />
+                <span class="changes">static uint64_t syscall_number;</span> <br />
+                </div>
+
+                <p>In the function <span class="inline-code">enter_syscall()</span>, update <span class="inline-code">syscall_number</span>:</p>
+
+                <div class="code">
+                void enter_syscall(ztool_os_staged_event_handle_t evhandle, void *data) <br />
+                { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;// Get the state handle <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;ztool_state_handle_t shandle = ztool_os_get_state_handle(evhandle.oshandle); <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;if (!ztool_config_is_key_enabled(in_syscall_key)) <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;{ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_desc_t desc; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.fn = count_enable; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.data = NULL; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.order = ZTOOL_CB_ORDER_DEFAULT; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.shandle = shandle; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desc.zhandle = zhandle; <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_config_initiate_reconfig_event(&amp;desc); <br />
+                 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="changes">// Get a handle to the system call <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_system_call_handle_t system_call_handle = <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_staged_event_get_system_call(evhandle); <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ztool_os_system_call_get_number(system_call_handle, &amp;syscall_number);</span> <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;} <br />
+                } <br />
+                </div>
+
+                <p>You will need to proceed to fill out the code:
+                <ol>
+                    <li>When new syscalls are encountered for the first time, <span class="inline-code">syscall_icounts</span> must be updated, mapping from the syscall number to a new <span class="inline-code">struct syscall_icount_t</span>.</li>
+                    <li>The <span class="inline-code">calls</span> field of <span class="inline-code">syscall_icounts</span> must be incremented precisely once every time a syscall is entered.</li>
+                    <li><span class="inline-code">count_inst()</span> must be updated to find the correct entry in <span class="inline-code">syscall_icounts</span> and update its instruction counts.</li>
+                    <li><span class="inline-code">fini()</span> must print the call and instruction counts for each syscall.</li>
+                </ol></p>
+
+                <p>When you have updated the code, compile it, fix any bugs, and run it.  Your output might look something like this:</p>
+
+                <div class="output">
+                Syscall 0: <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total calls: 49 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total user instructions: 49 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total kernel instructions: 883260 <br />
+                Syscall 1: <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total calls: 56 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total user instructions: 56 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total kernel instructions: 1208257 <br />
+                Syscall 2: <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total calls: 15 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total user instructions: 15 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Total kernel instructions: 123203 <br />
+                ... <br />
+                </div>
+
+                <h3 id="MultiCore">Multi-Core ztool</h3>
+
+                <p>One of the powerful features of SAE is its ability&mdash;through Simics&mdash;to simulate arbitrary systems.  We will explore now how to extend a tool from a single core to multiple cores.</p>
+
+                <p>First off, we will change the system from a single- to a multi-core computer.  Open both <span class="inline-code">boot_centos68.simics</span> and <span class="inline-code">resume_centos68.simics</span> and change</p>
+
+                <div class="code">
+                $num_cores = 1 <br />
+                </div>
+
+                <p>to</p>
+
+                <div class="code">
+                $num_cores = 2 <br />
+                </div>
+
+                <p>We will have to take a new checkpoint, since the system configuration has changed:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/boot_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>Once the OS has booted and logged in, take the checkpoint:</p>
+
+                <div class="command">
+                simics&gt; write-configuration Multicore
+                </div>
+
+                <p>Since you have a new checkpoint, you will have to edit the file <span class="inline-code">scripts/resume_centos68.simics</span> to resume from the new checkpoint.  You must also indicate that you want to run the new ztool:</p>
+
+                <div class="code">
+                # Resume from the checkpoint <br />
+                read-configuration <span class="changes">Multicore</span> <br />
+                 <br />
+                $host_name = "viper" <br />
+                local $con = $host_name.console.con <br />
+                local $vga = $host_name.mb.gpu.vga <br />
+                 <br />
+                $os_ztool = (vcpu-command "ztool-load tools/obj/intel64-opt/inst_count_multicore.so") <br />
+                script-branch { <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;$con.input "cd /home/parsec\n" <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Load the inst_count ztool <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;$ztool1 = (vcpu-command "ztool-load tools/obj/intel64-opt/<span class="changes">inst_count_multicore.so</span>") <br />
+                &nbsp;&nbsp;&nbsp;&nbsp; <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;# Run swaptions <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;... <br />
+                </div>
+
+                <p>Next, for the sake of simplicity, we will extend the plain <span class="inline-code">inst_count</span> tool (without syscall or kernel-/user-space features) from a single-core tool to a multi-core one.  You can download it <a href="code/inst_count_multicore.cpp" target="_blank">here</a> or copy it from the command line:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ cp ../master_files/multicore/inst_count_multicore.cpp tools/ <br />
+                </div>
+
+                <p>Update the file <span class="inline-code">tools/tools.names</span> to add support for compiling this new tool:</p>
+
+                <div class="code">
+                TOOLS = inst_count <span class="changes">inst_count_multicore</span> <br />
+                </div>
+
+                <p>Now, in <span class="inline-code">tools/inst_count_multicore.cpp</span>, on line 19, change the variable <span class="inline-code">icount</span> to a pointer:</p>
+
+                <div class="code">
+                static uint64_t *icount_mc; <br />
+                </div>
+
+                <p>We now need to initialize <span class="inline-code">icount_mc</span> as an array, the size of which must be the same as the number of cores.  This needs to be done in <span class="inline-code">ztool_init()</span>, and the number of cores can be queried dynamically using code like the following:</p>
+
+                <div class="code">
+                core_count = ztool_init_get_core_count(handle);
+                </div>
+
+                <p>Make sure you remember to initialize the contents of the array to 0.</p>
+
+                <p>In the function <span class="inline-code">count_inst()</span>, you have to be able to distinguish between the simulated cores.  You can get the numerical value of the core using the function</p>
+
+                <div class="code">
+                unsigned core_num = ztool_state_get_core_num(shandle);
+                </div>
+
+                <p>This value should be used to index into the <span class="inline-code">icount_mc</span> array.</p>
+
+                <p>Finally, update the function <span class="inline-code">fini()</span> to print out the instruction counts from every core.</p>
+
+                <p>Compile the tool and run it using the updated script <span class="inline-code">resume_centos68.simics</span>:</p>
+
+                <div class="command">
+                tutorial@VirtualBox:workspace$ ./simics -e '$target_script = scripts/resume_centos68.simics' targets/vcpu-common/vcpu-zsim.simics <br />
+                </div>
+
+                <p>Your output might look something like this:</p>
+
+                <div class="output">
+                Core 0 total instructions: 491917301 <br />
+                Core 1 total instructions: 488109134 <br />
+                </div>
+
+                <h3 id="MultiSystem">Multi-System ztool</h3>
+
+                <p>One of SAE's greatest features is its multi-system support.  While we will not cover multi-system tools in this tutorial, we have provided you with a simple script and tool (an extension of the instruction counter) to explore and play around with.  You can find these in the directory <span class="inline-code">~/SAE/master_files/multisystem/</span></p>
+
+                <p>The most important thing to remember about multi-system simulation is that each system is simulated by a different thread on the host.  That means that <span class="inline-code">ztool_init()</span> will be called by each host thread.  It also means that it is up to you, as the programmer, to guarantee thread safety in any tools you write.</p>
+
+            </div>
+        </div>
+    </body>
+</html>

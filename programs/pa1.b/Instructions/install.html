@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SAE Hands-On Tutorial</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <ol>
+        <li>When prompted, indicate you would not like to test the installation media by pressing the right arrow key followed by <span class="keystroke">Enter</span>.</li>
+            <li>Press <span class="keystroke">Enter</span> to pass the welcome screen.</li>
+            <li>Select English as your language by pressing <span class="keystroke">Enter</span>.</li>
+            <li>Select a "us" model keyboard by pressing <span class="keystroke">Enter</span>.</li>
+            <li>Re-initialize the disk by pressing the right arrow key three times and pressing <span class="keystroke">Enter</span>.</li>
+            <li>Accept the default time zone ("America/New York") by pressing <span class="keystroke">Tab</span> twice, followed by <span class="keystroke">Enter</span>.</li>
+            <li>Select a password for the root account; we suggest using "simics" for your password.</li>
+            <li>If you get a warning about using a weak password, use the right arrow key to highlight "Use Anyway" and press <span class="keystroke">Enter</span>.</li>
+            <li>Use the up arrow key to highlight "Use entire drive," then press <span class="keystroke">Tab</span> twice to highlight "OK" and press <span class="keystroke">Enter</span>.</li>
+            <li>Use the right arrow key to highlight "Write changes to disk" and press <span class="keystroke">Enter</span>.</li>
+            <li>Wait as the system is installed.</li>
+            <li>Press <span class="keystroke">Enter</span> to reboot.</li>
+        </ol>
+        <p>The system will fully reboot.  When it does so, we need to shut it down properly so that we can save the virtual state of the hard drive to the actual hard drive.</p>
+        <ol>
+            <li>Login using "root" as the user name.</li>
+            <li>Enter your password ("simics" if you followed our recommendation).</li>
+            <li>Type <span class="inline-code">init 0</span> and press <span class="keystroke">Enter</span>.</li>
+            <li>Wait for shutdown to complete.</li>
+        </ol>
+        <p>After the virtual machine displays "Power down" switch to the host machine's terminal (where you originally entered the command <span class="inline-code">./simics scripts/install_centos67.simics</span>).  After it has twice printed the message, "Sleep state is unimplemented," interrupt simulation by pressing Ctrl+C.</p>
+        <p>You will now need to write the virtual disk's changes to your physical disk.</p>
+        <ol>
+            <li>At the <span class="inline-code">simics&gt </span> command prompt, enter the command <span class="inline-code">save-persistent-state CENTOS</span>.</li>
+            <li>When the <span class="inline-code">simics&gt </span> command prompt returns, enter the command <span class="inline-code">quit</span> to exit Simics.</li>
+            <li>From the normal Bash command line, enter the command <span class="inline-code">mv CENTOS/viper.disk-... disk_images/centos67.craff</span></li>
+            <li>You can now delete the remaining installation files by entering the command <span class="inline-code">rm -rf CENTOS</span>.</li>
+        </ol>
+    </body>
+</html>

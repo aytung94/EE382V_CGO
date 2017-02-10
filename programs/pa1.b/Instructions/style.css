@@ -1,0 +1,94 @@
+h1 {
+    border-bottom-style: solid;
+}
+h2 {
+    font-variant: small-caps;
+    border-bottom-style: solid;
+    border-bottom-width: normal;
+    margin-left: -25px;
+}
+h3 {
+    border-bottom-style: solid;
+    border-bottom-width: thin;
+    margin-right: 10px;
+}
+
+#container {
+    width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#content {
+    margin-left: 25%;
+    border-left-style: solid;
+    border-left-width: thin;
+    padding-left: 35px;
+}
+#navbar {
+    float: left;
+    width: 25%;
+    padding-right: 10px;
+    /*position: fixed;*/
+}
+
+.code {
+    font-family: "Courier New";
+    background-color: #f6e3ce;
+    font-size: 10pt;
+    border-left: #b45f04;
+    border-left-style: solid;
+    border-left-width: thick;
+    margin-left: 25px;
+    margin-right: 25px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px
+}
+.command {
+    font-family: "Courier New";
+    font-size: 10pt;
+    background-color: #ecf6ce;
+    border-left: #86b404;
+    border-left-style: solid;
+    border-left-width: thick;
+    margin-left: 25px;
+    margin-right: 25px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px
+}
+.output {
+    font-family: "Courier New";
+    color: white;
+    background-color: #2e2e2e;
+    font-size: 10pt;
+    border-left: #a4a4a4;
+    border-left-style: solid;
+    border-left-width: thick;
+    margin-left: 25px;
+    margin-right: 25px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px
+}
+.inline-code {
+    font-family: "Courier New";
+    /*background-color: #ecf6ce;*/
+}
+.keystroke {
+    background-color: #a4a4a4;
+    font-family: "Arial";
+}
+.note {
+    text-align: center;
+    background-color: #f4fa58;
+    border: solid #aeb404;
+    margin: 15px;
+    margin-left: 70px;
+    margin-right: 70px;
+    padding: 10px;
+}
+.changes {
+    color: magenta;
+    font-weight: bold;
+}
