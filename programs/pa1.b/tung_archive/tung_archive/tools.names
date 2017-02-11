@@ -1,0 +1,13 @@
+#BEGIN_LEGAL
+#This Software is part of Intel(R) SAE. The rights to copy, distribute,
+#modify, or otherwise make use of this Software may be licensed only
+#pursuant to the terms of an applicable Intel license agreement.
+#
+#Copyright 2010-2015 Intel(R) Corporation
+#END_LEGAL
+
+###############################################
+# Set the tools to build from this directory. #
+###############################################
+
+TOOLS = inst_count inst_count_multicore 
