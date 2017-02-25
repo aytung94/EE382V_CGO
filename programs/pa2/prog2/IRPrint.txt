@@ -1,0 +1,61 @@
+; ModuleID = 'output.bc'
+source_filename = "test/simpleloop.cc"
+target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
+
+@.str = private unnamed_addr constant [7 x i8] c"Truey\0A\00", align 1
+@.str.1 = private unnamed_addr constant [8 x i8] c"Falsey\0A\00", align 1
+
+; Function Attrs: norecurse uwtable
+define i32 @main(i32, i8**) #0 {
+  %3 = getelementptr inbounds i8*, i8** %1, i64 1
+  %4 = load i8*, i8** %3, align 8
+  %5 = call i32 @atoi(i8* %4) #3
+  br label %6
+
+; <label>:6:                                      ; preds = %17, %2
+  %.0 = phi i32 [ 0, %2 ], [ %18, %17 ]
+  %7 = icmp slt i32 %.0, %5
+  br i1 %7, label %8, label %19
+
+; <label>:8:                                      ; preds = %6
+  %9 = add nsw i32 %.0, %0
+  %10 = srem i32 %9, 3
+  %11 = icmp ne i32 %10, 0
+  br i1 %11, label %12, label %14
+
+; <label>:12:                                     ; preds = %8
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i32 0, i32 0))
+  br label %16
+
+; <label>:14:                                     ; preds = %8
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1, i32 0, i32 0))
+  br label %16
+
+; <label>:16:                                     ; preds = %14, %12
+  br label %17
+
+; <label>:17:                                     ; preds = %16
+  %18 = add nsw i32 %.0, 1
+  br label %6
+
+; <label>:19:                                     ; preds = %6
+  call void @dump_path_regs()
+  ret i32 0
+}
+
+; Function Attrs: nounwind readonly
+declare i32 @atoi(i8*) #1
+
+declare i32 @printf(i8*, ...) #2
+
+declare void @dump_path_regs() #2
+
+attributes #0 = { norecurse uwtable "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind readonly "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind readonly }
+
+!llvm.ident = !{!0}
+
+!0 = !{!"clang version 3.9.1 (tags/RELEASE_391/final)"}
