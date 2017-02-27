@@ -15,7 +15,19 @@ main(int argc, char **argv) {
       printf("Falsey\n");
     }
   }
-   
+  
+ for (int j = 0; j < 10; j++){
+    if(j ==2)
+        printf("at 10");
+    else if(j == j % 3)
+        printf("div 3");
+    else{
+        
+        printf("dlksd");
+    }
+    printf("/n/n%d/n/n", j);
+ }
+
  dump_path_regs();
   return 0;
 }

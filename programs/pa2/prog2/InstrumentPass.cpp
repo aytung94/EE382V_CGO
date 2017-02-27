@@ -241,7 +241,7 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 outs() << "\n\n";
     for(int i = RTO.size() - 1; i >= 0; i--)
     {
-        const BasicBlock* v = RTO[i];
+        BasicBlock* v = RTO[i];
         for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
         {            
             if(wI->second != 0){ 
@@ -251,10 +251,30 @@ outs() << "\n\n";
             outs() << ": edge value = " << wI->second << "\n";                        
             outs() << wI->second;               
 
-            APInt val(32, wI->second);
+            if(wI->first == Exit)            
+            {
+                for(auto SuccI = succ_begin(v); SuccI != succ_end(v); SuccI++)
+                {
+                    if(!loop->contains(*SuccI) || *SuccI == header){
+    Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+    CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
+    // need to insert at exit blocks
+    call_fin->insertBefore((llvm::Instruction *)(*SuccI)->getFirstNonPHI());  
+    
+    APInt val(32, wI->second);
+                        Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
+                        CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
+                        call_inc->insertBefore((llvm::Instruction*)((*SuccI)->getFirstNonPHI())); 
+
+                    }
+                }
+            }
+            else{
+                APInt val(32, wI->second);
                 Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
                 CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
                 call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+                }
             }
         }
     }
