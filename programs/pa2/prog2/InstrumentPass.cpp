@@ -20,41 +20,210 @@ using namespace ee382v;
 using namespace llvm;
 using namespace std;
 
+// User macros
+#define PRINT_LOOPINFO 1
+#define PRINT_DEBUG 0
+
+// User defined datatypes
 typedef SmallVector<BasicBlock*, 32> block_vector;
-typedef unordered_set<const BasicBlock*> block_set;
-typedef unordered_map<const BasicBlock*, int> block_map;
-typedef unordered_map<const BasicBlock*, block_map> block_graph;
+typedef unordered_set<BasicBlock*> block_set;
+typedef unordered_map<BasicBlock*, int> block_map;
+typedef unordered_map<BasicBlock*, block_map> block_graph;
 
+// Instrument global variables
+int loopId = 1;
+unordered_map<int, unordered_map<int, int>> path_profile;
+unordered_map<int, int> r;
+void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit);
 
-void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit)
+bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 {
-    //*const TerminatorInst *TInst = node.getTerminator();
-    //*int NumSucc = TInst->getNumSuccessors();
-    
-//DEBUG
-    //*outs() << "NumSuccessors:" << NumSucc << "\n";
-    //*TInst->dump();
+    // Initialize necessary 
+#if PRINT_LOOPINFO == 1    
+if(loopId == 1)
+{
+    LoopInfo& loopinfo = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
+    loopinfo.print(outs());
+    outs() << "\n";
+}
+#endif 
 
-    //*for(int i = 0; i < NumSucc; i++)
+    DominatorTree& domTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+    DomTreeNode *node = domTree.getNode(loop->getHeader());
+    BasicBlock *header = node->getBlock();
+    node = domTree.getNode(loop->getLoopLatch());
+    BasicBlock *latch = node->getBlock();
+    Module *MP = loop->getHeader()->getParent()->getParent();   
+    LLVMContext *C = &MP->getContext();
+    
+#if PRINT_DEBUG == 1    
+    header->printAsOperand(outs(), false);
+    latch->printAsOperand(outs(), false); 
+#endif 
+    
+    // Initialize necessary data sets
+    block_vector RTO;
+    block_map numPaths;
+    block_graph pathGraph;
+    block_set visited;
+
+    //Insert dummy exit
+    BasicBlock* Exit = BasicBlock::Create(*C, "Exit", NULL, NULL);
+    numPaths.insert({Exit, 1});
+    pathGraph.insert({Exit, block_map()});
+
+    // No subloops (i.e. most inner loop)
+    if(loop->empty()){
+
+#if PRINT_DEBUG == 1
+        outs() << "INNER LOOP FOUND:\n\n Print Paths:\n"; 
+#endif          
+        // Get Reverse Topological Order
+        createPath(RTO, numPaths, pathGraph, visited, *loop, *header, *header, *Exit); 
+         
+#if PRINT_DEBUG == 1
+        outs() << "\n";
+        for(int i = 0; i < (int)RTO.size(); i++){
+            outs() << "; <label> ";
+                RTO[i]->printAsOperand(outs(), false);
+                outs() << ", paths = " << numPaths[RTO[i]];
+
+                if(loop->isLoopExiting(RTO[i]) || latch == RTO[i])
+                {
+                    outs() << ", exiting block";
+                }            
+                outs() << "\n";
+        }
+#endif         
+    }
+#if PRINT_DEBUG == 1    
+    else{
+        outs() << "OUTER LOOP SKIP:\n"; 
+    }
+   
+    outs() << "\nPrint Edge Values:\n";
+
+    for(int i = RTO.size() - 1; i >= 0; i--)
+    {
+        BasicBlock* v = RTO[i];
+        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
+        {
+            v->printAsOperand(outs(), false);
+            outs() << "->";            
+            wI->first->printAsOperand(outs(), false);            
+            outs() << ": edge value = " << wI->second << "\n";            
+        }
+    }
+
+    outs() << "\n\nPrint Instrumentation Locations\n";    
+#endif
+
+
+// Set up instrumentation functions
+
+    // Init Path Register
+    Function *init = dyn_cast<Function>(MP->getOrInsertFunction("init_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
+    
+    // Inc Path Register
+    Function *inc = dyn_cast<Function>(MP->getOrInsertFunction("inc_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
+    
+    // Finalize Path Register
+    Function *fin = dyn_cast<Function>(MP->getOrInsertFunction("finalize_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
+
+// Set up global arguments for functions    
+    APInt loopID(32, loopId);   
+    Value *init_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+    Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+
+// Insert functions
+
+    // Call Init   
+    CallInst *call_init = CallInst::Create(init, init_arg_values);
+    call_init->insertBefore(header->getFirstNonPHI()); 
+
+    // Call Inc and Final (<-TODO: CHANGE THIS TO FUNCTION IN DFS TO PRINT APPORPRIATE OUTPUT)
+    for(int i = RTO.size() - 1; i >= 0; i--)
+    {
+        BasicBlock* v = RTO[i]; // assumption w has one entry edge for v->w 
+        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
+        {   
+            // Iterate over all psuedo-exit blocks by finding actual exit blocks to instrument (except latch->header)
+            if(wI->first == Exit && v != latch)            
+            {                    
+                for(auto SuccI = succ_begin(v); SuccI != succ_end(v); SuccI++)
+                {
+                     if(!loop->contains(*SuccI)) // Should never see header unless latch!! guaranteed by no crit edges
+                     {  
+                        // Insert Call Final for Exits
+                        Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+                        CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
+                        call_fin->insertBefore((llvm::Instruction *)(*SuccI)->getFirstNonPHI());  
+                                               
+                        // Insert Call Inc for Exits if edge value is not 0
+                        if(wI->second != 0){ 
+                            APInt val(32, wI->second);
+                            Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
+                            CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
+                            call_inc->insertBefore((llvm::Instruction*)((*SuccI)->getFirstNonPHI())); 
+                        } 
+                    }        
+                }    
+            }
+            
+            // Insert Call Inc for Internal Blocks
+            else
+            { 
+                if(wI->second != 0){ 
+#if PRINT_DEBUG == 1                                 
+                    v->printAsOperand(outs(), false);
+                    outs() << "->";
+                    wI->first->printAsOperand(outs(), false);            
+                    outs() << ": edge value = " << wI->second << "\n";                        
+#endif                                         
+
+                    APInt val(32, wI->second);
+                    Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
+                    CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
+                    call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+                }
+            }
+        }
+    }
+
+
+    // Call Finalize for latch
+    CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
+    call_fin->insertBefore(latch->getTerminator());
+
+    // Increment Loop ID TODO
+    loopId++;
+
+    return false;    
+}
+
+void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit)
+{
+
     for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
     {
-        //*BasicBlock *Succ = TInst->getSuccessor(i);        
-        //DEBUG
         BasicBlock *Succ = *SuccI;
+#if PRINT_DEBUG == 1
         outs() << "Successors = ";
         Succ->printAsOperand(outs(), false);
         outs() << "\n";
-
+#endif 
         if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
         {
             visited.insert(Succ);
-        //DEBUG!!
-        outs() << "-; <label> ";
-        Succ->printAsOperand(outs(), false);
-        outs() << " visiting!\n";
-            revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
+#if PRINT_DEBUG == 1
+            outs() << "-; <label> ";
+            Succ->printAsOperand(outs(), false);
+            outs() << " visiting!\n";
+#endif             
+            createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
         }
-        // DEBUG!!!
+        
+#if PRINT_DEBUG == 1
          else if(visited.find(Succ) != visited.end())
          {
              outs() << "-Visited!\n";
@@ -68,19 +237,21 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_gra
              outs() << "-Successor is header!\n";
          } 
         outs() << "\n";
+#endif        
     }
     // this happens in reverse topological order
     reverseOrder.push_back(&node); 
 
  
 // Calculate Number of Paths
-    outs() << "\ncalculating paths\n";
+    //outs() << "\ncalculating paths\n";
+    
     pathGraph.insert({&node, block_map()});
     //outs() << "path graph size = " << pathGraph[&node].size() << "\n";
     if(succ_begin(&node) == succ_end(&node))
     {
         numPaths.insert({&node, 1});
-        outs() << numPaths[&node]; 
+        //outs() << numPaths[&node]; 
     }
     else 
     {
@@ -91,204 +262,23 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_gra
             if(loop.contains(Succ) && Succ != &header)
             {
                 pathGraph[&node].insert({Succ, numPaths[&node]}); 
-                outs() << "path graph size = " << pathGraph[&node].size() << "\n";               
+                //outs() << "path graph size = " << pathGraph[&node].size() << "\n";               
                 numPaths[&node] += numPaths[Succ];     
-                outs() << numPaths[&node];
+                //outs() << numPaths[&node];
             }
-            else
+            else // if exit block or latch block, assume exit
             {
-                pathGraph[&node].insert({&Exit, numPaths[&node]});
-                numPaths[&node] += numPaths[&Exit];
-            }
-        }
-    }
-    outs() << "\n";
-
-}
-
-bool revTopSort(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, Loop& loop, BasicBlock& header, BasicBlock& Exit)
-{
-    block_set visited;
-    revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, header, Exit); 
-    return true;
-}
-
-int loopId = 1;
-unordered_map<int, unordered_map<int, int>> path_profile;
-unordered_map<int, int> r;
-
-bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
-{
-	// Write your CODE Here
-	// I intentionally kept some code here so that you can know some APIs to call
-	// Delete them if you find them annoying :)
-
-	// LoopInfo& loopInfo = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-	// DominatorTree& domTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-	// DomTreeNode *node = domTree.getNode(loop->getHeader());
-	// FunctionType *FunTy = FunctionType::get( Type::getVoidTy( MP->getContext() ), ... );
-	// Function *Function = dyn_cast<Function> ( MP->getOrInsertFunction(...) );
-	// APInt LoopId(...);
-	// Value *init_arg_values[] = { Constant::getIntegerValue(...), ... };
-	// CallInst *call = CallInst::Create(...);
-	// call->insertBefore(???->getFirstNonPHI());
-	// call->insertBefore(latch->getTerminator());
-    
-    //if( // if inner loop 
-
-    LoopInfo& loopinfo = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-    DominatorTree& domTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-    DomTreeNode *node = domTree.getNode(loop->getHeader());
-    BasicBlock *header = node->getBlock();
-    node = domTree.getNode(loop->getLoopLatch());
-    BasicBlock *latch = node->getBlock();
-    Module *MP = loop->getHeader()->getParent()->getParent();   
-    LLVMContext *C = &MP->getContext();
-    // DEBUG
-    header->printAsOperand(outs(), false);
-    latch->printAsOperand(outs(), false); 
-
-    block_vector RTO;
-    block_map numPaths;
-    block_graph pathGraph;
-
-    // insert dummy exit
-    BasicBlock* Exit = BasicBlock::Create(*C, "Exit", NULL, NULL);
-    numPaths.insert({Exit, 1});
-    pathGraph.insert({Exit, block_map()});
-
-    // No subloops (i.e. most inner loop)
-    if(loop->empty()){
-        outs() << "inner loop!\n"; 
-         
-        // Get Reverse Topological Order
-        revTopSort(RTO, numPaths, pathGraph, *loop, *header, *Exit); 
-        outs() << "\n";
-        for(int i = 0; i < (int)RTO.size(); i++){
-            outs() << "; <label> ";
-                RTO[i]->printAsOperand(outs(), false);
-                outs() << ", paths = " << numPaths[RTO[i]];
-
-                if(loop->isLoopExiting(RTO[i]) || latch == RTO[i])
+                // Only add exit block once if multiple successors are exits or header
+                if(pathGraph[&node].find(&Exit) == pathGraph[&node].end())
                 {
-                    outs() << ", exiting block";
-                }            
-                outs() << "\n";
-        }
-    }
-    else{
-        outs() << "outer loop.\n"; 
-    }
-   
-    outs() << "\n";
-
-    for(int i = RTO.size() - 1; i >= 0; i--)
-    {
-        const BasicBlock* v = RTO[i];
-        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
-        {
-            v->printAsOperand(outs(), false);
-            outs() << "->";            
-            wI->first->printAsOperand(outs(), false);            
-            outs() << ": edge value = " << wI->second << "\n";            
-        }
-    }
-
-    outs() << "\n\n";    
-
- 	// FunctionType *FunTy = FunctionType::get( Type::getVoidTy( MP->getContext() ), ... );
-	// Function *Function = dyn_cast<Function> ( MP->getOrInsertFunction(...) );
-	// APInt LoopId(...);
-	// Value *init_arg_values[] = { Constant::getIntegerValue(...), ... };
-	// CallInst *call = CallInst::Create(...);
-	// call->insertBefore(???->getFirstNonPHI());
-	// call->insertBefore(latch->getTerminator());
-
-
-
-    // Set up data 
-//    ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(MP->getContext(), 32), RTO.size());
-//   PointerType* PointerTy_0 = PointerType::get(ArrayTy_0, 0);
-
-//    GlobalVariable* r = new GlobalVariable(*MP, ArrayTy_0, false, GlobalValue::ExternalLinkage, nullptr, "r");
-   
-//    r->setAlignment(4);
-
-       
-// Set up functions
-    // Init Path Register
-    Function *init = dyn_cast<Function>(MP->getOrInsertFunction("init_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
-    // Inc Path Register
-    Function *inc = dyn_cast<Function>(MP->getOrInsertFunction("inc_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
-    // Finalize Path Register
-    Function *fin = dyn_cast<Function>(MP->getOrInsertFunction("finalize_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
-    
-    loopinfo.print(outs());
-    //int ID = loop->getLoopID()->getMetadataID();
-    //loop->getLoopID()->print(outs(), MP,false); 
-
-// Set up arguments for functions    
-    APInt loopID(32, loopId);   
-
-    Value *init_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
-    Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
-
-// Insert functions
-    // Call Init  
-    CallInst *call_init = CallInst::Create(init, init_arg_values);
-    call_init->insertBefore(header->getFirstNonPHI());
-    // Call Inc
-outs() << "\n\n";
-    for(int i = RTO.size() - 1; i >= 0; i--)
-    {
-        BasicBlock* v = RTO[i];
-        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
-        {            
-            if(wI->second != 0){ 
-            v->printAsOperand(outs(), false);
-            outs() << "->";
-            wI->first->printAsOperand(outs(), false);            
-            outs() << ": edge value = " << wI->second << "\n";                        
-            outs() << wI->second;               
-
-            if(wI->first == Exit)            
-            {
-                for(auto SuccI = succ_begin(v); SuccI != succ_end(v); SuccI++)
-                {
-                    if(!loop->contains(*SuccI) || *SuccI == header){
-    Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
-    CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
-    // need to insert at exit blocks
-    call_fin->insertBefore((llvm::Instruction *)(*SuccI)->getFirstNonPHI());  
-    
-    APInt val(32, wI->second);
-                        Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
-                        CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
-                        call_inc->insertBefore((llvm::Instruction*)((*SuccI)->getFirstNonPHI())); 
-
-                    }
-                }
-            }
-            else{
-                APInt val(32, wI->second);
-                Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
-                CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
-                call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+                    pathGraph[&node].insert({&Exit, numPaths[&node]});
+                    numPaths[&node] += numPaths[&Exit];
                 }
             }
         }
     }
+    //outs() << "\n";
 
-
-    // Call finalize
-    CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
-    // need to insert at exit blocks
-    call_fin->insertBefore(latch->getTerminator());
-
-    loopId++;
-
-    printf("do I work");
-    return false;    
 }
 
 void InstrumentPass::getAnalysisUsage(AnalysisUsage &AU) const

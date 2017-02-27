@@ -9,7 +9,7 @@ unordered_map<int, unordered_map<int, int>> path_profile;
 unordered_map<int, int> r;
 
 extern "C" void init_path_reg(int loopId){   
-   // cout << loopId << "init paths" << "! ";
+//    cout << loopId << "init paths" << "! ";
     cout << "initializing path for loop: " << loopId << "\n";
     
     if(path_profile.find(loopId) == path_profile.end())
