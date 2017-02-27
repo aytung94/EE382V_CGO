@@ -20,13 +20,13 @@ using namespace ee382v;
 using namespace llvm;
 using namespace std;
 
-typedef SmallVector<const BasicBlock*, 32> block_vector;
+typedef SmallVector<BasicBlock*, 32> block_vector;
 typedef unordered_set<const BasicBlock*> block_set;
 typedef unordered_map<const BasicBlock*, int> block_map;
-typedef unordered_map<const BasicBlock*, block_map> path_graph;
+typedef unordered_map<const BasicBlock*, block_map> block_graph;
 
 
-void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node)
+void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node)
 {
     //*const TerminatorInst *TInst = node.getTerminator();
     //*int NumSucc = TInst->getNumSuccessors();
@@ -52,7 +52,7 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_set
         outs() << "-; <label> ";
         Succ->printAsOperand(outs(), false);
         outs() << " visiting!\n";
-            revTopSortHelper(reverseOrder, numPaths, visited, loop, header, *Succ);
+            revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ);
         }
         // DEBUG!!!
         else if(visited.find(Succ) != visited.end())
@@ -75,6 +75,8 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_set
  
 // Calculate Number of Paths
     outs() << "\ncalculating paths\n";
+    pathGraph.insert({&node, block_map()});
+    //outs() << "path graph size = " << pathGraph[&node].size() << "\n";
     if(succ_begin(&node) == succ_end(&node))
     {
         numPaths.insert({&node, 1});
@@ -86,10 +88,12 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_set
         bool validSucc = false;
         for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
         {        
-            BasicBlock *Succ = *SuccI;
+            BasicBlock *Succ = *SuccI;            
             if(loop.contains(Succ) && Succ != &header)
             {
-                numPaths[&node] += numPaths[Succ];
+                pathGraph[&node].insert({Succ, numPaths[&node]}); 
+                outs() << "path graph size = " << pathGraph[&node].size() << "\n";               
+                numPaths[&node] += numPaths[Succ];     
                 outs() << numPaths[&node];
                 validSucc = true;
             }
@@ -104,10 +108,10 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_set
 
 }
 
-bool revTopSort(block_vector& reverseOrder, block_map& numPaths, Loop& loop, BasicBlock& header)
+bool revTopSort(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, Loop& loop, BasicBlock& header)
 {
     block_set visited;
-    revTopSortHelper(reverseOrder, numPaths, visited, loop, header, header); 
+    revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, header); 
     return true;
 }
 
@@ -140,16 +144,18 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
     header->printAsOperand(outs(), false);
     latch->printAsOperand(outs(), false); 
 
+    block_vector RTO;
+    block_map numPaths;
+    block_graph pathGraph;
+
     // No subloops (i.e. most inner loop)
     if(loop->empty()){
         outs() << "inner loop!\n"; 
          
         // Get Reverse Topological Order
-        block_vector RTO;
-        block_map numPaths;
-        revTopSort(RTO, numPaths, *loop, *header); 
+        revTopSort(RTO, numPaths, pathGraph, *loop, *header); 
         outs() << "\n";
-        for(int i = 0; i < RTO.size(); i++){
+        for(int i = 0; i < (int)RTO.size(); i++){
             outs() << "; <label> ";
             RTO[i]->printAsOperand(outs(), false);
 
@@ -165,8 +171,62 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
     else{
         outs() << "outer loop.\n"; 
     }
+   
+    outs() << "\n";
+
+    for(int i = RTO.size() - 1; i >= 0; i--)
+    {
+        const BasicBlock* v = RTO[i];
+        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
+        {
+            v->printAsOperand(outs(), false);
+            outs() << "->";
+            wI->first->printAsOperand(outs(), false);            
+            outs() << ": edge value = " << wI->second << "\n";            
+        }
+    }
+
+    outs() << "\n\n";    
+
+ 	// FunctionType *FunTy = FunctionType::get( Type::getVoidTy( MP->getContext() ), ... );
+	// Function *Function = dyn_cast<Function> ( MP->getOrInsertFunction(...) );
+	// APInt LoopId(...);
+	// Value *init_arg_values[] = { Constant::getIntegerValue(...), ... };
+	// CallInst *call = CallInst::Create(...);
+	// call->insertBefore(???->getFirstNonPHI());
+	// call->insertBefore(latch->getTerminator());
+
+
+    Module *MP = loop->getHeader()->getParent()->getParent();   
+    // Set up data 
+    ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(mod->getContext(), 32), RTO.size());
+    PointerType* PointerTy_0 - PointerType::get(ArrayTy_0, 0);
+
+    GlobalVariable* r = new GlobalVariable(MP, 
+                                           ArrayTy_0 
+                                           false, 
+                                           GlobalValue::ExternalLinkage, 
+                                           0, 
+                                           "r");
+    path_profile->setAlignment(16);
+    ConstantAggregateZero* const_array_2 = ConstantAggregateZero::get(ArrayTy_0);
+    path_profile->setInitializer(const_array_2);
+
+    // Set up functions
+    // Init Register
+    Function *init = dyn_cast<Function>(MP->getOrInsertFunction("init_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
+         
     
-    return false;
+    loopinfo.print(outs());
+    //int ID = loop->getLoopID()->getMetadataID();
+    //loop->getLoopID()->print(outs(), MP,false); 
+    APInt loopID(32, 1);
+    Value *init_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+
+    CallInst *call_init = CallInst::Create(init, init_arg_values);
+    call_init->insertBefore((RTO[3])->getFirstNonPHI());
+
+    return false;    
 }
 
 void InstrumentPass::getAnalysisUsage(AnalysisUsage &AU) const

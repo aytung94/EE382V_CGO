@@ -1,10 +1,11 @@
 ; ModuleID = 'output.bc'
-source_filename = "test/simpleloop.cc"
+source_filename = "test/basic.cc"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
 @.str = private unnamed_addr constant [7 x i8] c"Truey\0A\00", align 1
-@.str.1 = private unnamed_addr constant [8 x i8] c"Falsey\0A\00", align 1
+@.str.1 = private unnamed_addr constant [9 x i8] c"I am %d\0A\00", align 1
+@.str.2 = private unnamed_addr constant [8 x i8] c"Falsey\0A\00", align 1
 
 ; Function Attrs: norecurse uwtable
 define i32 @main(i32, i8**) #0 {
@@ -13,33 +14,45 @@ define i32 @main(i32, i8**) #0 {
   %5 = call i32 @atoi(i8* %4) #3
   br label %6
 
-; <label>:6:                                      ; preds = %17, %2
-  %.0 = phi i32 [ 0, %2 ], [ %18, %17 ]
+; <label>:6:                                      ; preds = %21, %2
+  %.0 = phi i32 [ 0, %2 ], [ %22, %21 ]
   %7 = icmp slt i32 %.0, %5
-  br i1 %7, label %8, label %19
+  br i1 %7, label %8, label %23
 
 ; <label>:8:                                      ; preds = %6
   %9 = add nsw i32 %.0, %0
   %10 = srem i32 %9, 3
   %11 = icmp ne i32 %10, 0
-  br i1 %11, label %12, label %14
+  br i1 %11, label %12, label %18
 
 ; <label>:12:                                     ; preds = %8
   %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i32 0, i32 0))
-  br label %16
+  %14 = icmp eq i32 %.0, 6
+  br i1 %14, label %15, label %._crit_edge
 
-; <label>:14:                                     ; preds = %8
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1, i32 0, i32 0))
-  br label %16
-
-; <label>:16:                                     ; preds = %14, %12
+._crit_edge:                                      ; preds = %12
   br label %17
 
-; <label>:17:                                     ; preds = %16
-  %18 = add nsw i32 %.0, 1
+; <label>:15:                                     ; preds = %12
+  call void @init_path_reg(i32 1)
+  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 %.0)
+  br label %17
+
+; <label>:17:                                     ; preds = %._crit_edge, %15
+  br label %20
+
+; <label>:18:                                     ; preds = %8
+  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2, i32 0, i32 0))
+  br label %20
+
+; <label>:20:                                     ; preds = %18, %17
+  br label %21
+
+; <label>:21:                                     ; preds = %20
+  %22 = add nsw i32 %.0, 1
   br label %6
 
-; <label>:19:                                     ; preds = %6
+; <label>:23:                                     ; preds = %6
   call void @dump_path_regs()
   ret i32 0
 }
@@ -50,6 +63,8 @@ declare i32 @atoi(i8*) #1
 declare i32 @printf(i8*, ...) #2
 
 declare void @dump_path_regs() #2
+
+declare void @init_path_reg(i32)
 
 attributes #0 = { norecurse uwtable "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readonly "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
