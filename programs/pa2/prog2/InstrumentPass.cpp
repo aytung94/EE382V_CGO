@@ -141,6 +141,8 @@ if(loopId == 1)
     CallInst *call_init = CallInst::Create(init, init_arg_values);
     call_init->insertBefore(header->getFirstNonPHI()); 
 
+outs() << RTO[RTO.size()-1]->getName() << "\n";
+
     // Call Inc and Final (<-TODO: CHANGE THIS TO FUNCTION IN DFS TO PRINT APPORPRIATE OUTPUT)
     for(int i = RTO.size() - 1; i >= 0; i--)
     {
