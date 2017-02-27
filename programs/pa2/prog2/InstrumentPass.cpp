@@ -21,7 +21,8 @@ using namespace llvm;
 using namespace std;
 
 // User macros
-#define PRINT_DEBUG 1
+#define PRINT_DEBUG 0
+#define USE_GETBLOCKS 1
 
 // User defined datatypes
 typedef SmallVector<BasicBlock*, 32> block_vector;
@@ -44,8 +45,11 @@ if(loopId == 1)
     LoopInfo& loopinfo = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
     loopinfo.print(outs());
     outs() << "\n";
-}
+#if USE_GETBLOCKS == 1
+    outs() << "USING GETBLOCKS\n";
 #endif 
+}
+#endif
 
     DominatorTree& domTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     DomTreeNode *node = domTree.getNode(loop->getHeader());
@@ -214,26 +218,30 @@ outs() << RTO[RTO.size()-1]->getName() << "\n";
 
 void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit)
 {
-
-///    for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
-///    {
-///        BasicBlock *Succ = *SuccI;
+#if USE_GETBLOCKS == 0    
+    for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
+    {
+        BasicBlock *Succ = *SuccI;
+#endif        
 /*
         outs() << "Successors = ";
         Succ->printAsOperand(outs(), false);
         outs() << "\n";
 */
-///        if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
-///        {
-///            visited.insert(Succ);
+#if USE_GETBLOCKS == 0
+        if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
+        {
+            visited.insert(Succ);
+#endif            
 /*
             outs() << "-; <label> ";
             Succ->printAsOperand(outs(), false);
             outs() << " visiting!\n";
 */
-///            createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
-///        }
-        
+#if USE_GETBLOCKS == 0
+            createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
+        }
+#endif        
 /*
          else if(visited.find(Succ) != visited.end())
          {
@@ -249,17 +257,21 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
          } 
         outs() << "\n";
 */
-///    }
-///    // this happens in reverse topological order
-///    reverseOrder.push_back(&node); 
+#if USE_GETBLOCKS == 0
+    }
+    // this happens in reverse topological order
+    reverseOrder.push_back(&node); 
+#endif    
    
+#if USE_GETBLOCKS == 1   
     // blocks are in topological order
     vector<BasicBlock*> RTO = loop.getBlocks();
    
     for(int i = (int)RTO.size() - 1; i >= 0; i--){
         BasicBlock& node = *RTO[i];
         reverseOrder.push_back(&node); // place in reverse order
-     
+#endif
+
 // Calculate Number of Paths
     //outs() << "\ncalculating paths\n";
     
@@ -295,7 +307,10 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
         }
     }
     //outs() << "\n";
-}
+#if USE_GETBLOCKS == 1
+    }
+#endif
+
 }
 
 void InstrumentPass::getAnalysisUsage(AnalysisUsage &AU) const
