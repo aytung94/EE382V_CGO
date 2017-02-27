@@ -287,6 +287,7 @@ outs() << "\n\n";
 
     loopId++;
 
+    printf("do I work");
     return false;    
 }
 
