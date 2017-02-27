@@ -26,7 +26,7 @@ typedef unordered_map<const BasicBlock*, int> block_map;
 typedef unordered_map<const BasicBlock*, block_map> block_graph;
 
 
-void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node)
+void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit)
 {
     //*const TerminatorInst *TInst = node.getTerminator();
     //*int NumSucc = TInst->getNumSuccessors();
@@ -52,21 +52,21 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_gra
         outs() << "-; <label> ";
         Succ->printAsOperand(outs(), false);
         outs() << " visiting!\n";
-            revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ);
+            revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
         }
         // DEBUG!!!
-        else if(visited.find(Succ) != visited.end())
-        {
-            outs() << "-Visited!\n";
-        }
-        else if(!loop.contains(Succ))
-        {
+         else if(visited.find(Succ) != visited.end())
+         {
+             outs() << "-Visited!\n";
+         }
+         else if(!loop.contains(Succ))
+         {
             outs() << "-Successor not in loop!\n";
-        }
-        else if(Succ == &header)
-        {
-            outs() << "-Successor is header!\n";
-        }
+         }
+         else if(Succ == &header)
+         {
+             outs() << "-Successor is header!\n";
+         } 
         outs() << "\n";
     }
     // this happens in reverse topological order
@@ -85,7 +85,6 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_gra
     else 
     {
         numPaths.insert({&node, 0});
-        bool validSucc = false;
         for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
         {        
             BasicBlock *Succ = *SuccI;            
@@ -95,23 +94,22 @@ void revTopSortHelper(block_vector& reverseOrder, block_map& numPaths, block_gra
                 outs() << "path graph size = " << pathGraph[&node].size() << "\n";               
                 numPaths[&node] += numPaths[Succ];     
                 outs() << numPaths[&node];
-                validSucc = true;
             }
-        }
-        if(!validSucc)
-        {
-            numPaths[&node] = 1;
-            outs() << numPaths[&node];
+            else
+            {
+                pathGraph[&node].insert({&Exit, numPaths[&node]});
+                numPaths[&node] += numPaths[&Exit];
+            }
         }
     }
     outs() << "\n";
 
 }
 
-bool revTopSort(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, Loop& loop, BasicBlock& header)
+bool revTopSort(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, Loop& loop, BasicBlock& header, BasicBlock& Exit)
 {
     block_set visited;
-    revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, header); 
+    revTopSortHelper(reverseOrder, numPaths, pathGraph, visited, loop, header, header, Exit); 
     return true;
 }
 
@@ -144,6 +142,8 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
     BasicBlock *header = node->getBlock();
     node = domTree.getNode(loop->getLoopLatch());
     BasicBlock *latch = node->getBlock();
+    Module *MP = loop->getHeader()->getParent()->getParent();   
+    LLVMContext *C = &MP->getContext();
     // DEBUG
     header->printAsOperand(outs(), false);
     latch->printAsOperand(outs(), false); 
@@ -152,24 +152,28 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
     block_map numPaths;
     block_graph pathGraph;
 
+    // insert dummy exit
+    BasicBlock* Exit = BasicBlock::Create(*C, "Exit", NULL, NULL);
+    numPaths.insert({Exit, 1});
+    pathGraph.insert({Exit, block_map()});
+
     // No subloops (i.e. most inner loop)
     if(loop->empty()){
         outs() << "inner loop!\n"; 
          
         // Get Reverse Topological Order
-        revTopSort(RTO, numPaths, pathGraph, *loop, *header); 
+        revTopSort(RTO, numPaths, pathGraph, *loop, *header, *Exit); 
         outs() << "\n";
         for(int i = 0; i < (int)RTO.size(); i++){
             outs() << "; <label> ";
-            RTO[i]->printAsOperand(outs(), false);
+                RTO[i]->printAsOperand(outs(), false);
+                outs() << ", paths = " << numPaths[RTO[i]];
 
-            outs() << ", paths = " << numPaths[RTO[i]];
-
-            if(loop->isLoopExiting(RTO[i]) || latch == RTO[i])
-            {
-                outs() << ", exiting block";
-            }            
-            outs() << "\n";
+                if(loop->isLoopExiting(RTO[i]) || latch == RTO[i])
+                {
+                    outs() << ", exiting block";
+                }            
+                outs() << "\n";
         }
     }
     else{
@@ -184,7 +188,7 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
         for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
         {
             v->printAsOperand(outs(), false);
-            outs() << "->";
+            outs() << "->";            
             wI->first->printAsOperand(outs(), false);            
             outs() << ": edge value = " << wI->second << "\n";            
         }
@@ -201,7 +205,7 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 	// call->insertBefore(latch->getTerminator());
 
 
-    Module *MP = loop->getHeader()->getParent()->getParent();   
+
     // Set up data 
 //    ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(MP->getContext(), 32), RTO.size());
 //   PointerType* PointerTy_0 = PointerType::get(ArrayTy_0, 0);
