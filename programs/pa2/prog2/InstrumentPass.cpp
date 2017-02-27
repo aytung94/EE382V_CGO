@@ -115,6 +115,10 @@ bool revTopSort(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
     return true;
 }
 
+int loopId = 1;
+unordered_map<int, unordered_map<int, int>> path_profile;
+unordered_map<int, int> r;
+
 bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 {
 	// Write your CODE Here
@@ -199,32 +203,65 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 
     Module *MP = loop->getHeader()->getParent()->getParent();   
     // Set up data 
-    ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(mod->getContext(), 32), RTO.size());
-    PointerType* PointerTy_0 - PointerType::get(ArrayTy_0, 0);
+//    ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(MP->getContext(), 32), RTO.size());
+//   PointerType* PointerTy_0 = PointerType::get(ArrayTy_0, 0);
 
-    GlobalVariable* r = new GlobalVariable(MP, 
-                                           ArrayTy_0 
-                                           false, 
-                                           GlobalValue::ExternalLinkage, 
-                                           0, 
-                                           "r");
-    path_profile->setAlignment(16);
-    ConstantAggregateZero* const_array_2 = ConstantAggregateZero::get(ArrayTy_0);
-    path_profile->setInitializer(const_array_2);
+//    GlobalVariable* r = new GlobalVariable(*MP, ArrayTy_0, false, GlobalValue::ExternalLinkage, nullptr, "r");
+   
+//    r->setAlignment(4);
 
-    // Set up functions
-    // Init Register
+       
+// Set up functions
+    // Init Path Register
     Function *init = dyn_cast<Function>(MP->getOrInsertFunction("init_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
-         
+    // Inc Path Register
+    Function *inc = dyn_cast<Function>(MP->getOrInsertFunction("inc_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
+    // Finalize Path Register
+    Function *fin = dyn_cast<Function>(MP->getOrInsertFunction("finalize_path_reg", Type::getVoidTy(MP->getContext()), Type::getInt32Ty(MP->getContext()), NULL));
     
     loopinfo.print(outs());
     //int ID = loop->getLoopID()->getMetadataID();
     //loop->getLoopID()->print(outs(), MP,false); 
-    APInt loopID(32, 1);
-    Value *init_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
 
+// Set up arguments for functions    
+    APInt loopID(32, loopId);   
+
+    Value *init_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+    Value *fin_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID)}; 
+
+// Insert functions
+    // Call Init  
     CallInst *call_init = CallInst::Create(init, init_arg_values);
-    call_init->insertBefore((RTO[3])->getFirstNonPHI());
+    call_init->insertBefore(RTO[RTO.size()-2]->getFirstNonPHI());
+    // Call Inc
+outs() << "\n\n";
+    for(int i = RTO.size() - 1; i >= 0; i--)
+    {
+        const BasicBlock* v = RTO[i];
+        for(auto wI = pathGraph[v].begin(); wI != pathGraph[v].end(); wI++)
+        {            
+            if(wI->second != 0){ 
+            v->printAsOperand(outs(), false);
+            outs() << "->";
+            wI->first->printAsOperand(outs(), false);            
+            outs() << ": edge value = " << wI->second << "\n";                        
+            outs() << wI->second;               
+
+            APInt val(32, wI->second);
+                Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
+                CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
+                call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+            }
+        }
+    }
+
+
+    // Call finalize
+    CallInst *call_fin = CallInst::Create(fin, fin_arg_values);
+    // need to insert at exit blocks
+    call_fin->insertBefore(latch->getTerminator());
+
+    loopId++;
 
     return false;    
 }

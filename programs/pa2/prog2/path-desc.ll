@@ -96,3 +96,8 @@ path graph size = 1
 
 
 Loop at depth 1 containing: %6<header><exiting>,%8,%18,%12,%._crit_edge,%15,%17,%20,%21<latch>
+
+
+%8->%18: edge value = 2
+2%12->%._crit_edge: edge value = 1
+1

@@ -7,7 +7,7 @@ main(int argc, char **argv) {
   for (int i = 0, e = atoi(argv[1]); i < e; ++i) {
     if ((i + argc) % 3) {
       printf("Truey\n");
-      if(i == 6)
+      if(i < 7)
       {
         printf("I am %d\n", i);
       }
@@ -15,7 +15,7 @@ main(int argc, char **argv) {
       printf("Falsey\n");
     }
   }
-  
+   
  dump_path_regs();
   return 0;
 }
