@@ -21,8 +21,7 @@ using namespace llvm;
 using namespace std;
 
 // User macros
-#define PRINT_LOOPINFO 1
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 
 // User defined datatypes
 typedef SmallVector<BasicBlock*, 32> block_vector;
@@ -39,7 +38,7 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
 bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 {
     // Initialize necessary 
-#if PRINT_LOOPINFO == 1    
+#if PRINT_DEBUG == 1    
 if(loopId == 1)
 {
     LoopInfo& loopinfo = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
@@ -56,11 +55,6 @@ if(loopId == 1)
     Module *MP = loop->getHeader()->getParent()->getParent();   
     LLVMContext *C = &MP->getContext();
     
-#if PRINT_DEBUG == 1    
-    header->printAsOperand(outs(), false);
-    latch->printAsOperand(outs(), false); 
-#endif 
-    
     // Initialize necessary data sets
     block_vector RTO;
     block_map numPaths;
@@ -76,13 +70,19 @@ if(loopId == 1)
     if(loop->empty()){
 
 #if PRINT_DEBUG == 1
-        outs() << "INNER LOOP FOUND:\n\n Print Paths:\n"; 
+    outs() << "\n---------- DEBUG PRINT FOR LOOP " << loopId << " ----------\n";
+    outs() << "INNER LOOP FOUND\n\n"; 
+    outs() << "Header: ";
+    header->printAsOperand(outs(), false);
+    outs() << "\nLatch: ";
+    latch->printAsOperand(outs(), false); 
+    outs() << "\n";
 #endif          
         // Get Reverse Topological Order
         createPath(RTO, numPaths, pathGraph, visited, *loop, *header, *header, *Exit); 
          
 #if PRINT_DEBUG == 1
-        outs() << "\n";
+        outs() << "\nPrint Paths:\n";
         for(int i = 0; i < (int)RTO.size(); i++){
             outs() << "; <label> ";
                 RTO[i]->printAsOperand(outs(), false);
@@ -115,7 +115,7 @@ if(loopId == 1)
         }
     }
 
-    outs() << "\n\nPrint Instrumentation Locations\n";    
+    outs() << "\nPrint Instrumentation Locations\n";    
 #endif
 
 
@@ -161,6 +161,12 @@ if(loopId == 1)
                                                
                         // Insert Call Inc for Exits if edge value is not 0
                         if(wI->second != 0){ 
+#if PRINT_DEBUG == 1                                 
+                            v->printAsOperand(outs(), false);
+                            outs() << "->";
+                            wI->first->printAsOperand(outs(), false);            
+                            outs() << ": edge value = " << wI->second << "\n";                        
+#endif 
                             APInt val(32, wI->second);
                             Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
                             CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
@@ -198,6 +204,9 @@ if(loopId == 1)
     // Increment Loop ID TODO
     loopId++;
 
+#if PRINT_DEBUG == 1
+    outs() << "--------------------------------------------\n\n";
+#endif    
     return false;    
 }
 
@@ -207,23 +216,23 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
     for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
     {
         BasicBlock *Succ = *SuccI;
-#if PRINT_DEBUG == 1
+/*
         outs() << "Successors = ";
         Succ->printAsOperand(outs(), false);
         outs() << "\n";
-#endif 
+*/
         if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
         {
             visited.insert(Succ);
-#if PRINT_DEBUG == 1
+/*
             outs() << "-; <label> ";
             Succ->printAsOperand(outs(), false);
             outs() << " visiting!\n";
-#endif             
+*/
             createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
         }
         
-#if PRINT_DEBUG == 1
+/*
          else if(visited.find(Succ) != visited.end())
          {
              outs() << "-Visited!\n";
@@ -237,7 +246,7 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
              outs() << "-Successor is header!\n";
          } 
         outs() << "\n";
-#endif        
+*/
     }
     // this happens in reverse topological order
     reverseOrder.push_back(&node); 
