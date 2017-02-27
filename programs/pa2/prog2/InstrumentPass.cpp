@@ -215,24 +215,24 @@ outs() << RTO[RTO.size()-1]->getName() << "\n";
 void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pathGraph, block_set& visited, Loop& loop, BasicBlock& header, BasicBlock& node, BasicBlock& Exit)
 {
 
-    for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
-    {
-        BasicBlock *Succ = *SuccI;
+///    for(succ_iterator SuccI = succ_begin(&node); SuccI != succ_end(&node); SuccI++)
+///    {
+///        BasicBlock *Succ = *SuccI;
 /*
         outs() << "Successors = ";
         Succ->printAsOperand(outs(), false);
         outs() << "\n";
 */
-        if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
-        {
-            visited.insert(Succ);
+///        if(visited.find(Succ) == visited.end() && loop.contains(Succ) && Succ != &header)
+///        {
+///            visited.insert(Succ);
 /*
             outs() << "-; <label> ";
             Succ->printAsOperand(outs(), false);
             outs() << " visiting!\n";
 */
-            createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
-        }
+///            createPath(reverseOrder, numPaths, pathGraph, visited, loop, header, *Succ, Exit);
+///        }
         
 /*
          else if(visited.find(Succ) != visited.end())
@@ -249,11 +249,17 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
          } 
         outs() << "\n";
 */
-    }
-    // this happens in reverse topological order
-    reverseOrder.push_back(&node); 
-
- 
+///    }
+///    // this happens in reverse topological order
+///    reverseOrder.push_back(&node); 
+   
+    // blocks are in topological order
+    vector<BasicBlock*> RTO = loop.getBlocks();
+   
+    for(int i = (int)RTO.size() - 1; i >= 0; i--){
+        BasicBlock& node = *RTO[i];
+        reverseOrder.push_back(&node); // place in reverse order
+     
 // Calculate Number of Paths
     //outs() << "\ncalculating paths\n";
     
@@ -289,7 +295,7 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
         }
     }
     //outs() << "\n";
-
+}
 }
 
 void InstrumentPass::getAnalysisUsage(AnalysisUsage &AU) const
