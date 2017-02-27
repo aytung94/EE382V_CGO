@@ -236,7 +236,7 @@ bool InstrumentPass::runOnLoop(llvm::Loop* loop, llvm::LPPassManager& lpm)
 // Insert functions
     // Call Init  
     CallInst *call_init = CallInst::Create(init, init_arg_values);
-    call_init->insertBefore(RTO[RTO.size()-2]->getFirstNonPHI());
+    call_init->insertBefore(header->getFirstNonPHI());
     // Call Inc
 outs() << "\n\n";
     for(int i = RTO.size() - 1; i >= 0; i--)
