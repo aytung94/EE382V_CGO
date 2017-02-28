@@ -21,7 +21,7 @@ using namespace llvm;
 using namespace std;
 
 // User macros
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 #define USE_GETBLOCKS 1
 
 // User defined datatypes
@@ -29,6 +29,7 @@ typedef SmallVector<BasicBlock*, 32> block_vector;
 typedef unordered_set<BasicBlock*> block_set;
 typedef unordered_map<BasicBlock*, int> block_map;
 typedef unordered_map<BasicBlock*, block_map> block_graph;
+typedef stack<BasicBlock*> block_stack;
 
 // Instrument global variables
 int loopId = 1;
@@ -145,7 +146,7 @@ if(loopId == 1)
     CallInst *call_init = CallInst::Create(init, init_arg_values);
     call_init->insertBefore(header->getFirstNonPHI()); 
 
-outs() << RTO[RTO.size()-1]->getName() << "\n";
+//outs() << RTO[RTO.size()-1]->getName() << "\n"; 
 
     // Call Inc and Final (<-TODO: CHANGE THIS TO FUNCTION IN DFS TO PRINT APPORPRIATE OUTPUT)
     for(int i = RTO.size() - 1; i >= 0; i--)
@@ -209,6 +210,77 @@ outs() << RTO[RTO.size()-1]->getName() << "\n";
 
     // Increment Loop ID TODO
     loopId++;
+
+// PRINT INFO
+
+    block_stack DFS;
+    stack<pair<int, string>> valPaths;
+    unordered_map<int, string> printPaths;
+
+    BasicBlock* v = header;    
+    string arrow = "->";
+
+    DFS.push(v);
+    valPaths.push({0, v->getName()});
+
+    while(pathGraph.size() != 0)
+    {        
+        v->printAsOperand(outs(),false);
+        outs() << " " << valPaths.top().first <<" " <<  valPaths.top().second << "\n";       
+        for(int i = 0; i < 100; i++) 
+        {
+            outs() << " ";
+        }
+        if(v != Exit)
+        {
+            auto wI = pathGraph[v].begin();            
+            if(wI != pathGraph[v].end())
+            {
+                 v = wI->first;
+                 DFS.push(v);
+                 if(valPaths.empty()){
+                     valPaths.push({0, v->getName()});
+                 }
+                 else{                             
+                    valPaths.push({(valPaths.top().first + wI->second), (valPaths.top().second + arrow + v->getName().str())});
+                 }                 
+            }
+            else
+            {                              
+                pathGraph.erase(v);
+
+                valPaths.pop();                
+
+                v = DFS.top();
+                DFS.pop();
+
+                if(pathGraph.size() != 0){
+                    pathGraph[DFS.top()].erase(v);
+                    v = DFS.top();
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        else
+        {   
+            printPaths.insert({valPaths.top().first, valPaths.top().second});
+            valPaths.pop();
+
+            v = DFS.top(); DFS.pop();
+            pathGraph[DFS.top()].erase(v);                        
+            v = DFS.top();
+        }
+    }
+
+   printf("\nLoopId: PathID: Value:\n");
+   int indP = 0;
+   for(auto itP = printPaths.begin(); itP != printPaths.end(); itP++){
+        printf("%-6d  %-6d  %-6s\n", loopId, indP++, itP->second.c_str());  
+   }
+
+
 
 #if PRINT_DEBUG == 1
     outs() << "--------------------------------------------\n\n";
@@ -312,6 +384,7 @@ void createPath(block_vector& reverseOrder, block_map& numPaths, block_graph& pa
 #endif
 
 }
+
 
 void InstrumentPass::getAnalysisUsage(AnalysisUsage &AU) const
 {
