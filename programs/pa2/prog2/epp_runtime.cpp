@@ -43,13 +43,14 @@ extern "C" void finalize_path_reg(int loopId){
 }
 
 extern "C" void dump_path_regs(){
-    printf("\nLoopID: PathID: Value:\n");
+//    printf("\nLoopID: PathID: Value:\n");
 
     for(auto itP = path_profile.begin(); itP != path_profile.end(); itP++){
         int indP = 0;
         for(auto itR = itP->second.begin(); itR != itP->second.end(); itR++){
 //            cout << "Loop # " << itP->first  <<  " Path #" << itR->first << " Count #" << itR->second << "\n";
-           printf("%-6d  %-6d  %-6d\n", itP->first, indP, itR->second); 
+              cout << "(" << itR->first << ")";
+           printf("%-6d  %-6d  %-6d\n", itP->first, indP, itR->second);            
            indP++;
         }
     }    
