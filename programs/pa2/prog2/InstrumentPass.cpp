@@ -238,7 +238,7 @@ void printPaths(BasicBlock& node, string name, int val, BasicBlock& Exit, block_
             printPaths(*itV->first, temp_name, temp_val, Exit, pathGraph);
         } 
         else {
-            outs() << "(" << temp_val << ")";
+//            outs() << "(" << temp_val << ")";
             outs() << format("%-6d  %-6d  %s\n", loopId, indP, temp_name.c_str());
             indP++;
         }
