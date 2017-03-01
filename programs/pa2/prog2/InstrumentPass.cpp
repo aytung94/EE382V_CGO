@@ -22,7 +22,7 @@ using namespace llvm;
 using namespace std;
 
 // User macros
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 #define USE_GETBLOCKS 1
 
 // User defined datatypes
@@ -55,7 +55,7 @@ if(loopId == 1)
 #endif 
 }
 #endif
-
+    
     DominatorTree& domTree = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     DomTreeNode *node = domTree.getNode(loop->getHeader());
     BasicBlock *header = node->getBlock();
@@ -152,7 +152,7 @@ if(loopId == 1)
 
 //outs() << RTO[RTO.size()-1]->getName() << "\n"; 
 
-    // Call Inc and Final (<-TODO: CHANGE THIS TO FUNCTION IN DFS TO PRINT APPORPRIATE OUTPUT)
+    // Call Inc and Final 
     for(int i = RTO.size() - 1; i >= 0; i--)
     {
         BasicBlock* v = RTO[i]; // assumption w has one entry edge for v->w 
@@ -181,7 +181,9 @@ if(loopId == 1)
                             APInt val(32, wI->second);
                             Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
                             CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
+
                             call_inc->insertBefore((llvm::Instruction*)((*SuccI)->getFirstNonPHI())); 
+
                         } 
                     }        
                 }    
@@ -189,8 +191,8 @@ if(loopId == 1)
             
             // Insert Call Inc for Internal Blocks
             else
-            { 
-                if(wI->second != 0){ 
+            {              
+               {// if(wI->second != 0){ 
 #if PRINT_DEBUG == 1                                 
                     v->printAsOperand(outs(), false);
                     outs() << "->";
@@ -201,7 +203,34 @@ if(loopId == 1)
                     APInt val(32, wI->second);
                     Value *inc_arg_values[] = {Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), loopID), Constant::getIntegerValue(Type::getInt32Ty(MP->getContext()), val)}; 
                     CallInst *call_inc = CallInst::Create(inc, inc_arg_values); 
-                    call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+
+                    bool doelse = true;
+                    if(wI->first != Exit && v != latch){
+                        auto PI = pred_begin(wI->first);                 
+                        auto PIe = pred_end(wI->first);                       
+                        if(PI != PIe){
+                            PI++;                          
+                            if(PI != PIe){
+                                call_inc->insertBefore((llvm::Instruction*)(v->getTerminator())); 
+#if PRINT_DEBUG == 1
+                                outs() << "-inserting instruction at predecessor terminator for\n";      
+#endif
+                                doelse = false;
+                            }      
+                        }
+                    }
+                    if(doelse && v != latch){
+#if PRINT_DEBUG == 1
+                        outs() << "-inserting instruction at successor beginning\n";
+#endif                        
+                        call_inc->insertBefore((llvm::Instruction*)wI->first->getFirstNonPHI());
+                    } 
+                    if(v == latch){
+#if PRINT_DEBUG == 1                    
+                        outs() << " I AM LATCH";
+#endif                         
+                        call_inc->insertBefore((llvm::Instruction*)(v->getTerminator())); 
+                    }
                 }
             }
         }
@@ -238,7 +267,7 @@ void printPaths(BasicBlock& node, string name, int val, BasicBlock& Exit, block_
             printPaths(*itV->first, temp_name, temp_val, Exit, pathGraph);
         } 
         else {
-//            outs() << "(" << temp_val << ")";
+            outs() << "(" << temp_val << ")";
             outs() << format("%-6d  %-6d  %s\n", loopId, indP, temp_name.c_str());
             indP++;
         }

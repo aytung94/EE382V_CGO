@@ -20,25 +20,31 @@ define i32 @main(i32, i8**) #0 {
   br i1 %7, label %8, label %19
 
 ; <label>:8:                                      ; preds = %6
+  call void @inc_path_reg(i32 1, i32 0)
   %9 = add nsw i32 %.0, %0
   %10 = srem i32 %9, 3
   %11 = icmp ne i32 %10, 0
   br i1 %11, label %12, label %14
 
 ; <label>:12:                                     ; preds = %8
+  call void @inc_path_reg(i32 1, i32 0)
   %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i32 0, i32 0))
+  call void @inc_path_reg(i32 1, i32 0)
   br label %16
 
 ; <label>:14:                                     ; preds = %8
   call void @inc_path_reg(i32 1, i32 1)
   %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1, i32 0, i32 0))
+  call void @inc_path_reg(i32 1, i32 0)
   br label %16
 
 ; <label>:16:                                     ; preds = %14, %12
   br label %17
 
 ; <label>:17:                                     ; preds = %16
+  call void @inc_path_reg(i32 1, i32 0)
   %18 = add nsw i32 %.0, 1
+  call void @inc_path_reg(i32 1, i32 0)
   call void @finalize_path_reg(i32 1)
   br label %6
 
