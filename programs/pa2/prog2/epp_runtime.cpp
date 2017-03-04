@@ -49,7 +49,7 @@ extern "C" void dump_path_regs(){
         int indP = 0;
         for(auto itR = itP->second.begin(); itR != itP->second.end(); itR++){
 //            cout << "Loop # " << itP->first  <<  " Path #" << itR->first << " Count #" << itR->second << "\n";
-              cout << "(" << itR->first << ")";
+//              cout << "(" << itR->first << ")";
            printf("%-6d  %-6d  %-6d\n", itP->first, indP, itR->second);            
            indP++;
         }

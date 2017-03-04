@@ -22,7 +22,7 @@ using namespace llvm;
 using namespace std;
 
 // User macros
-#define PRINT_DEBUG 1
+#define PRINT_DEBUG 0
 #define USE_GETBLOCKS 1
 
 // User defined datatypes
@@ -192,7 +192,7 @@ if(loopId == 1)
             // Insert Call Inc for Internal Blocks
             else
             {              
-               {// if(wI->second != 0){ 
+                if(wI->second != 0){ 
 #if PRINT_DEBUG == 1                                 
                     v->printAsOperand(outs(), false);
                     outs() << "->";
