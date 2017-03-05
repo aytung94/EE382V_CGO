@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Run: ./run.sh simpleloop
+#Run: ./run.sh simpleloop
 
 mkdir -p ready
 make clean && make

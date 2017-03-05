@@ -10,4 +10,4 @@ instrument.so: InstrumentPass.o
 	$(CXX) -shared $^ -o $@
 
 clean:
-	rm -f *.o *~ *.so *.ll *.bc *.out ready/*
+	rm -f *.o *~ *.so *.ll *.bc *.out ready/* *.jpeg *.dot
