@@ -1,0 +1,4 @@
+Error opening './live.so': ./live.so: undefined symbol: _ZTV13LivenessFrame
+  -load request ignored.
+opt: Unknown command line argument '-live'.  Try: 'opt -help'
+opt: Did you mean '-die'?
