@@ -10,12 +10,12 @@
 using namespace llvm;
 using namespace std;
 
-class LivenessFrame: public DataFlowFrame<SetVector<StringRef>, Function, const BasicBlock>
+class ReachingDefinitionsFrame: public DataFlowFrame<SetVector<StringRef>, Function, const BasicBlock>
 {
 private:     
     
 public:     
-    LivenessFrame(Function* scope, bool dir, bool init);//:DataFlowFrame(scope, dir, init){};
+    ReachingDefinitionsFrame(Function* scope, bool dir, bool init);//:DataFlowFrame(scope, dir, init){};
    
     // User defined functions   
     void genFunction(const Instruction* ins, SetVector<StringRef>* genSet);
@@ -25,5 +25,5 @@ public:
     void unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1);
     void handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB); // only necessary for backwards analysis
     void emptySet(SetVector<StringRef>* dom);
-    ~LivenessFrame();     
+    ~ReachingDefinitionsFrame();     
 };

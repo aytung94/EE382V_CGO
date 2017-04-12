@@ -20,50 +20,6 @@
 namespace example
 {
 
-/*template <typename AnalysisType>
-class DataFlowAnnotator
-{
-private:
-	AnalysisType& analysis;
-	llvm::raw_ostream& os;
-
-	template <typename StateType>
-	void printState(const StateType& state) const
-	{
-		os << "{ ";
-		for (auto v: state)
-			os << v << " ";
-		os << "}";
-	}
-
-	void emitBasicBlockStartAnnot(const llvm::Instruction& i)
-	{
-		printState(analysis.getInState(&i));
-	}
-
-	void emitBasicBlockEndAnnot(const llvm::Instruction& i)
-	{
-		printState(analysis.getOutState(&i));
-		os << "\n---\n";
-	}
-public:
-	DataFlowAnnotator(AnalysisType& a, llvm::raw_ostream& o): analysis(a), os(o) {}
-
-	void print(const llvm::Function& f)
-	{
-		os << "\n******  DataFlow Result for function " << f.getName() << "  ******\n";
-		for (auto const& bb: f)
-		{
-            for (auto const& i: bb)
-            {
-                emitBasicBlockStartAnnot(i);
-                os << "\n" << i << "\n";
-                emitBasicBlockEndAnnot(i);
-            }
-		}
-	}
-};*/
-
 template <typename AnalysisType>
 class DataFlowAnnotator
 {
@@ -76,7 +32,7 @@ private:
 	{
 		os << "{ ";
 		for (auto v: state)
-			os << v << " ";
+			os << v->getName() << " ";
 		os << "}";
 	}
 
@@ -98,9 +54,9 @@ public:
 		os << "\n******  DataFlow Result for function " << f.getName() << "  ******\n";
 		for (auto const& bb: f)
 		{
-            emitBasicBlockStartAnnot(bb);
-            os << bb;
-            emitBasicBlockEndAnnot(bb);         
+			emitBasicBlockStartAnnot(bb);
+			os << bb;
+			emitBasicBlockEndAnnot(bb);
 		}
 	}
 };

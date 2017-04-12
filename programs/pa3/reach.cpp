@@ -12,9 +12,10 @@ using namespace example;
 bool live::runOnModule(Module& M)
 {
 
-    LivenessFrame liveness(&*M.begin(), false, false);      
+   LivenessFrame liveness(&*M.begin(), false, false);      
    
-    liveness.createDataFlow();
+   liveness.createDataFlow();
+   
    
     DataFlowAnnotator<LivenessFrame> annotator(liveness, errs());
     annotator.print(*M.begin());

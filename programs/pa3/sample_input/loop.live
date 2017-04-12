@@ -1,46 +1,46 @@
 
 ******  DataFlow Result for function f  ******
-{ s }
-entry:
-  br label %while.cond
-{ s }
+{ arg }
+bb:
+  br label %bb4
+{  arg }
 ---
-{ call5 j.1 s }
-while.cond:                                       ; preds = %while.end, %entry
-  %i.0 = phi i32 [ 0, %entry ], [ %call5, %while.end ]
-  %j.0 = phi i32 [ 0, %entry ], [ %j.1, %while.end ]
-  %add = add nsw i32 %s, 10
-  %cmp = icmp slt i32 %i.0, %add
-  br i1 %cmp, label %while.body, label %while.end6
-{ j.0 i.0 s }
+{  tmp22 tmp2.1 arg }
+bb4:                                              ; preds = %bb20, %bb
+  %tmp1.0 = phi i32 [ 0, %bb ], [ %tmp22, %bb20 ]
+  %tmp2.0 = phi i32 [ 0, %bb ], [ %tmp2.1, %bb20 ]
+  %tmp7 = add nsw i32 %arg, 10
+  %tmp8 = icmp slt i32 %tmp1.0, %tmp7
+  br i1 %tmp8, label %bb9, label %bb23
+{ tmp1.0 tmp2.0 arg }
 ---
-{ j.0 i.0 s }
-while.body:                                       ; preds = %while.cond
-  %call = call i32 @extra(i32 %i.0)
-  br label %while.cond1
-{ call j.0 s }
+{ tmp1.0 tmp2.0 arg }
+bb9:                                              ; preds = %bb4
+  %tmp11 = call i32 @extra(i32 %tmp1.0)
+  br label %bb12
+{ tmp2.0 arg tmp11 }
 ---
-{ call4 call j.0 s }
-while.cond1:                                      ; preds = %while.body3, %while.body
-  %j.1 = phi i32 [ %j.0, %while.body ], [ %call4, %while.body3 ]
-  %cmp2 = icmp slt i32 %j.1, %s
-  br i1 %cmp2, label %while.body3, label %while.end
-{ j.1 call s }
+{ tmp2.0 tmp19 arg tmp11 }
+bb12:                                             ; preds = %bb16, %bb9
+  %tmp2.1 = phi i32 [ %tmp2.0, %bb9 ], [ %tmp19, %bb16 ]
+  %tmp15 = icmp slt i32 %tmp2.1, %arg
+  br i1 %tmp15, label %bb16, label %bb20
+{ tmp11 tmp2.1 arg }
 ---
-{ j.1 call s }
-while.body3:                                      ; preds = %while.cond1
-  %call4 = call i32 @extra2(i32 %call, i32 %j.1)
-  br label %while.cond1
-{ call4 call s }
+{ tmp11 tmp2.1 arg }
+bb16:                                             ; preds = %bb12
+  %tmp19 = call i32 @extra2(i32 %tmp11, i32 %tmp2.1)
+  br label %bb12
+{ tmp19 arg tmp11 }
 ---
-{ j.1 s }
-while.end:                                        ; preds = %while.cond1
-  %call5 = call i32 @extra(i32 %j.1)
-  br label %while.cond
-{ call5 j.1 s }
+{ tmp2.1 arg }
+bb20:                                             ; preds = %bb12
+  %tmp22 = call i32 @extra(i32 %tmp2.1)
+  br label %bb4
+{ tmp22 tmp2.1 arg }
 ---
-{ i.0 }
-while.end6:                                       ; preds = %while.cond
-  ret i32 %i.0
+{ tmp1.0 }
+bb23:                                             ; preds = %bb4
+  ret i32 %tmp1.0
 { }
 ---

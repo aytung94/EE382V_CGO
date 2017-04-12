@@ -1,4 +1,4 @@
-#include "LivenessFrame.h"
+#include "ReachingDefinitionsFrame.h"
 
 #include <llvm/IR/Module.h>
 #include <llvm/Support/raw_ostream.h>
@@ -7,10 +7,10 @@
 
 using namespace llvm;
 
-LivenessFrame::LivenessFrame(Function* scope, bool dir, bool init):DataFlowFrame(scope, dir, init){};
+ReachingDefinitionsFrame::ReachingDefinitionsFrame(Function* scope, bool dir, bool init):DataFlowFrame(scope, dir, init){};
 
 
-void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
+void ReachingDefinitionsFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
 {
     if(const BranchInst* b_ins = dyn_cast<BranchInst>(ins))
     {
@@ -54,14 +54,14 @@ void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* ge
     }
 }
 
-void LivenessFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
+void ReachingDefinitionsFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
 {
     killSet->insert(ins->getName());
 #if PRINT_PASS_DEBUG            
     outs() << "\n kill function " << ins->getName();
 #endif    
 }
-bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>*>* prev)
+bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>*>* prev)
 {
 #if PRINT_PASS_DEBUG    
     static int i;
@@ -83,7 +83,7 @@ bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>*
     
     return change;
 }
-bool LivenessFrame::transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out)
+bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out)
 {
 #if PRINT_PASS_DEBUG        
     static int i;
@@ -110,7 +110,7 @@ bool LivenessFrame::transferFunction(SetVector<StringRef>* gen, SetVector<String
    
     return change;
 }
-void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1)
+void ReachingDefinitionsFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1)
 {
     for(auto it = dom1->begin(); it != dom1->end(); it++)
     {
@@ -118,7 +118,7 @@ void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* d
     } 
 }
 
-void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
+void ReachingDefinitionsFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
 {         
     auto phi_it = Phi->getParent()->begin();
     while(const PHINode* phi_pt = dyn_cast<PHINode>(&*phi_it))
@@ -135,9 +135,9 @@ void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode*
 }
 
 
-void LivenessFrame::emptySet(SetVector<StringRef>* dom)
+void ReachingDefinitionsFrame::emptySet(SetVector<StringRef>* dom)
 {
     // do nothing
 }           
 
-LivenessFrame::~LivenessFrame(){};
+ReachingDefinitionsFrame::~ReachingDefinitionsFrame(){};
