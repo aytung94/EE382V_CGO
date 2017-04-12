@@ -36,6 +36,7 @@ public:
     virtual bool meetFunction(Domain* in, Domain* out, vector<Domain*>* prev) = 0;    
     virtual bool transferFunction(Domain* gen, Domain* kill, Domain* in, Domain* out) = 0;
     virtual void unionSet(Domain* dom0, Domain* dom1) = 0;
+    virtual void boundaryCondition(Domain* boundSet, Scope* scope) = 0;
     virtual void handlePrevPhi(Domain* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) = 0;// only necessary for backwards analysis
     virtual void emptySet(Domain* dom) = 0;
     virtual ~DataFlowFrame(){};
@@ -110,6 +111,18 @@ public:
                         prevI = I;                        
                     }           
                 }
+                
+                Domain boundSet;
+                boundaryCondition(&boundSet, Sco);
+                
+                inSets[&*(F->begin()->begin())] = boundSet; 
+#if PRINT_GEN_DEBUG                            
+                outs() << "forward initSet\n{ ";
+                for (auto v: inSets[&*(F->begin()->begin())])
+                    outs() << v << " ";
+                outs() << "}";
+#endif                                                  
+                
             }
             else
             {
@@ -176,7 +189,7 @@ public:
                     change = false;
                     for(auto B_it = F->begin(); B_it != F->end(); B_it++)
                     {                                      
-                        for(auto I_it = ++B_it->begin(); I_it != B_it->end(); I_it++)
+                        for(auto I_it = B_it->begin(); I_it != B_it->end(); I_it++)
                         {                      
                             const Instruction *I = &*I_it;
                             
@@ -235,7 +248,7 @@ public:
                             }                        
         
                             change |= meetFunction(&inSets[I], &outSets[I], &prevDoms);
-                            change |= transferFunction(&genSets[I], &killSets[I], &inSets[I], &outSets[I]);
+                            change |= transferFunction(&genSets[I], &killSets[I], &inSets[I], &outSets[I]);    
                         }                               
                     }        
                 } while(change);

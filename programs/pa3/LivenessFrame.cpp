@@ -118,6 +118,11 @@ void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* d
     } 
 }
 
+void LivenessFrame::boundaryCondition(SetVector<StringRef>* boundSet, Function* scope)
+{
+        scope->begin();
+}
+
 void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
 {         
     auto phi_it = Phi->getParent()->begin();

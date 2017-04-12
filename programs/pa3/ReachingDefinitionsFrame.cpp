@@ -12,46 +12,10 @@ ReachingDefinitionsFrame::ReachingDefinitionsFrame(Function* scope, bool dir, bo
 
 void ReachingDefinitionsFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
 {
-    if(const BranchInst* b_ins = dyn_cast<BranchInst>(ins))
-    {
-        if(b_ins->isConditional())
-        {
-            genSet->insert(b_ins->getCondition()->getName());
-#if PRINT_PASS_DEBUG        
-            outs() << "\n gen function " << b_ins->getCondition()->getName();
-#endif         
-        }        
-    }       
-    else if(const CallInst* c_ins = dyn_cast<CallInst>(ins))
-    {
-        for(auto a = c_ins->arg_begin(); a != c_ins->arg_end(); a++)
-        {
-            genSet->insert(a->get()->getName());
-#if PRINT_PASS_DEBUG        
-            outs() << "\n gen function " << a->get()->getName();
-#endif        
-        }        
-    }
-    else if(const PHINode* p_ins = dyn_cast<PHINode>(ins))
-    {
-        for(int p = 0; p < (int)p_ins->getNumIncomingValues(); p++)
-        {
-            genSet->insert(p_ins->getIncomingValue(p)->getName());
-#if PRINT_PASS_DEBUG        
-            outs() << "\n gen function " << p_ins->getIncomingValue(p)->getName();
-#endif             
-        }
-    }
-    else
-    {
-        for(auto v = ins->op_begin(); v != ins->op_end(); v++)
-        {
-            genSet->insert(v->get()->getName());
-#if PRINT_PASS_DEBUG        
-            outs() << "\n gen function " << v->get()->getName();
-#endif        
-        }
-    }
+    genSet->insert(ins->getName());
+#if PRINT_PASS_DEBUG            
+    outs() << "\n gen function " << ins->getName();
+#endif   
 }
 
 void ReachingDefinitionsFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
@@ -71,15 +35,14 @@ bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<
 
     for(int i = 0; i < (int)prev->size(); i++)
     {
-        (*prev)[i]->begin();
         for(auto j = ((*prev)[i])->begin(); j != ((*prev)[i])->end(); j++)
         {
-                change |= out->insert(*j);     
+                change |= in->insert(*j);     
 #if PRINT_PASS_DEBUG                
         outs() << " " << *j << "\n";
 #endif              
         }
-    }
+    }        
     
     return change;
 }
@@ -92,18 +55,18 @@ bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVe
     bool change = false;
     for(auto g = gen->begin(); g != gen->end(); g++)
     {
-        change |= in->insert(*g);
+        change |= out->insert(*g);
 #if PRINT_PASS_DEBUG                
         outs() << " " << *g << "\n";
 #endif        
     }
-    for(auto o = out->begin(); o != out->end(); o++)
+    for(auto i = in->begin(); i != in->end(); i++)
     {
-        if(find(kill->begin(), kill->end(), *o) == kill->end())
+        if(find(kill->begin(), kill->end(), *i) == kill->end())
         {
-            change |= in->insert(*o);
+            change |= out->insert(*i);
 #if PRINT_PASS_DEBUG                
-        outs() << " " << *o << "\n";
+        outs() << " " << *i << "\n";
 #endif              
         }
     }    
@@ -118,20 +81,17 @@ void ReachingDefinitionsFrame::unionSet(SetVector<StringRef>* dom0, SetVector<St
     } 
 }
 
+void ReachingDefinitionsFrame::boundaryCondition(SetVector<StringRef>* boundSet, Function* scope)
+{
+    for(auto a = scope->getArgumentList().begin(); a != scope->getArgumentList().end(); a++)
+    {
+        boundSet->insert(a->getName());
+    }    
+}
+
 void ReachingDefinitionsFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
 {         
-    auto phi_it = Phi->getParent()->begin();
-    while(const PHINode* phi_pt = dyn_cast<PHINode>(&*phi_it))
-    {
-        for(int e = 0; e < (int)phi_pt->getNumIncomingValues(); e++)
-        {
-            BasicBlock* BB = phi_pt->getIncomingBlock(e);
-            if(BB != BBtoPhiBB){
-                PhiInSet->remove(phi_pt->getIncomingValue(e)->getName());
-            }
-        }
-        phi_it++;
-    }
+   // do nothing
 }
 
 

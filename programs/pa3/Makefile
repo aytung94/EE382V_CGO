@@ -1,7 +1,9 @@
 CXXFLAGS = $(shell llvm-config --cxxflags) -fno-rtti
 CXX = clang++
 
-all: live.so
+all: live.so reach.so
+live: live.so
+reach: reach.so
 
 LivenessFrame.o: LivenessFrame.cpp LivenessFrame.h DataFlowFrame.h Makefile
 	$(CXX) $(CXXFLAGS) LivenessFrame.cpp -c -o $@   

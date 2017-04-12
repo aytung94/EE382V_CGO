@@ -23,6 +23,7 @@ public:
     bool meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>*>* prev);
     bool transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out);
     void unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1);
+    void boundaryCondition(SetVector<StringRef>* boundSet, Function* scope);
     void handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB); // only necessary for backwards analysis
     void emptySet(SetVector<StringRef>* dom);
     ~LivenessFrame();     

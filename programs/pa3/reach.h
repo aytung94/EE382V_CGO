@@ -4,13 +4,13 @@
 
 using namespace llvm;
 
-class live: public ModulePass
+class reach: public ModulePass
 {
 private:     
     
 public: 
 	static char ID;         
-    live() : ModulePass(ID){};
+    reach() : ModulePass(ID){};
 
     bool runOnModule(Module&);
 

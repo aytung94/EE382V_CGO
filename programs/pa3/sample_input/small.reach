@@ -1,4 +1,23 @@
-Error opening './reach.so': ./reach.so: cannot open shared object file: No such file or directory
-  -load request ignored.
-opt: Unknown command line argument '-reach'.  Try: 'opt -help'
-opt: Did you mean '-march'?
+
+******  DataFlow Result for function small  ******
+{ arg }
+bb:
+  %tmp15 = mul nsw i32 %arg, %arg
+  %tmp17 = sdiv i32 %tmp15, 2
+  %tmp19 = icmp sgt i32 %arg, 0
+  br i1 %tmp19, label %bb20, label %bb27
+{  tmp19 tmp17 tmp15 arg }
+---
+{  tmp19 tmp17 tmp15 arg }
+bb20:                                             ; preds = %bb
+  %tmp23 = add nsw i32 %tmp15, %tmp17
+  %tmp26 = add nsw i32 %tmp23, %arg
+  br label %bb27
+{  tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+---
+{  tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+bb27:                                             ; preds = %bb20, %bb
+  %tmp1.0 = phi i32 [ %tmp26, %bb20 ], [ %tmp15, %bb ]
+  ret i32 %tmp1.0
+{  tmp1.0 tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+---
