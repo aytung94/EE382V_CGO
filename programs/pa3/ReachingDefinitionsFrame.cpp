@@ -1,31 +1,35 @@
 #include "ReachingDefinitionsFrame.h"
 
 #include <llvm/IR/Module.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/SetVector.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
 
-ReachingDefinitionsFrame::ReachingDefinitionsFrame(Function* scope, bool dir, bool init):DataFlowFrame(scope, dir, init){};
+ReachingDefinitionsFrame::ReachingDefinitionsFrame(Function* func, bool dir, bool init):DataFlowFrame(func, dir, init){
+};
 
 
 void ReachingDefinitionsFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
-{
+{    
     genSet->insert(ins->getName());
+    
 #if PRINT_PASS_DEBUG            
     outs() << "\n gen function " << ins->getName();
 #endif   
 }
 
 void ReachingDefinitionsFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
-{
+{    
     killSet->insert(ins->getName());
 #if PRINT_PASS_DEBUG            
     outs() << "\n kill function " << ins->getName();
 #endif    
+      
 }
-bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>*>* prev)
+
+bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>>* prev)
 {
 #if PRINT_PASS_DEBUG    
     static int i;
@@ -35,7 +39,7 @@ bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<
 
     for(int i = 0; i < (int)prev->size(); i++)
     {
-        for(auto j = ((*prev)[i])->begin(); j != ((*prev)[i])->end(); j++)
+        for(auto j = ((*prev)[i]).begin(); j != ((*prev)[i]).end(); j++)
         {
                 change |= in->insert(*j);     
 #if PRINT_PASS_DEBUG                
@@ -46,6 +50,7 @@ bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<
     
     return change;
 }
+
 bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out)
 {
 #if PRINT_PASS_DEBUG        
@@ -63,8 +68,10 @@ bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVe
     for(auto i = in->begin(); i != in->end(); i++)
     {
         if(find(kill->begin(), kill->end(), *i) == kill->end())
-        {
-            change |= out->insert(*i);
+        {                                    
+            {                
+                change |= out->insert(*i);
+            }
 #if PRINT_PASS_DEBUG                
         outs() << " " << *i << "\n";
 #endif              
@@ -89,15 +96,15 @@ void ReachingDefinitionsFrame::boundaryCondition(SetVector<StringRef>* boundSet,
     }    
 }
 
-void ReachingDefinitionsFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
-{         
-   // do nothing
+void ReachingDefinitionsFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
+{       
+    // do nothing
 }
 
 
 void ReachingDefinitionsFrame::emptySet(SetVector<StringRef>* dom)
 {
-    // do nothing
+    dom->clear();
 }           
 
 ReachingDefinitionsFrame::~ReachingDefinitionsFrame(){};

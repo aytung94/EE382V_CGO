@@ -2,30 +2,27 @@
 #include "ReachingDefinitionsFrame.h"
 #include "DataFlowAnnotator.h"
 
-#include <llvm/IR/Module.h>
+#include <llvm/IR/Function.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/StringSet.h>
 
 using namespace llvm;
 using namespace example;
 
-bool reach::runOnModule(Module& M)
-{
-
-   ReachingDefinitionsFrame reaching(&*M.begin(), true, false);      
-   
-   reaching.createDataFlow();
-   
+bool reach::runOnFunction(Function& F)
+{      
+    ReachingDefinitionsFrame reaching(&F, true, false);         
+    reaching.createDataFlow();
    
     DataFlowAnnotator<ReachingDefinitionsFrame> annotator(reaching, errs());
-    annotator.print(*M.begin());
+    annotator.print(F);
         
     return false;
 } 
 
 void reach::getAnalysisUsage(AnalysisUsage &AU) const
 {
-    AU.setPreservesAll();
+  AU.setPreservesAll();
 }
 
 // LLVM uses the address of this static member to identify the pass, so the

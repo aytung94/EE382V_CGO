@@ -4,15 +4,15 @@
 
 using namespace llvm;
 
-class reach: public ModulePass
+class reach: public FunctionPass
 {
 private:     
     
 public: 
 	static char ID;         
-    reach() : ModulePass(ID){};
+    reach() : FunctionPass(ID){};
 
-    bool runOnModule(Module&);
+    bool runOnFunction(Function&);
 
 	void getAnalysisUsage(llvm::AnalysisUsage &AU) const;     
 };

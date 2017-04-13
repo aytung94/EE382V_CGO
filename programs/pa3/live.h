@@ -4,15 +4,15 @@
 
 using namespace llvm;
 
-class live: public ModulePass
+class live: public FunctionPass
 {
 private:     
     
 public: 
 	static char ID;         
-    live() : ModulePass(ID){};
+    live() : FunctionPass(ID){};
 
-    bool runOnModule(Module&);
+    bool runOnFunction(Function&);
 
 	void getAnalysisUsage(llvm::AnalysisUsage &AU) const;     
 };

@@ -2,22 +2,20 @@
 #include "LivenessFrame.h"
 #include "DataFlowAnnotator.h"
 
-#include <llvm/IR/Module.h>
+#include <llvm/IR/Function.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/StringSet.h>
 
 using namespace llvm;
 using namespace example;
 
-bool live::runOnModule(Module& M)
+bool live::runOnFunction(Function& F)
 {
-
-    LivenessFrame liveness(&*M.begin(), false, false);      
-   
+    LivenessFrame liveness(&F, false, false);         
     liveness.createDataFlow();
    
     DataFlowAnnotator<LivenessFrame> annotator(liveness, errs());
-    annotator.print(*M.begin());
+    annotator.print(F);
         
     return false;
 } 

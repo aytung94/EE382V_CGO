@@ -1,13 +1,14 @@
 #include "LivenessFrame.h"
 
 #include <llvm/IR/Module.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/SetVector.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
 
-LivenessFrame::LivenessFrame(Function* scope, bool dir, bool init):DataFlowFrame(scope, dir, init){};
+
+LivenessFrame::LivenessFrame(Function* func, bool dir, bool init):DataFlowFrame(func, dir, init){};
 
 
 void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
@@ -61,7 +62,7 @@ void LivenessFrame::killFunction(const Instruction* ins, SetVector<StringRef>* k
     outs() << "\n kill function " << ins->getName();
 #endif    
 }
-bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>*>* prev)
+bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>>* prev)
 {
 #if PRINT_PASS_DEBUG    
     static int i;
@@ -71,8 +72,8 @@ bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>*
 
     for(int i = 0; i < (int)prev->size(); i++)
     {
-        (*prev)[i]->begin();
-        for(auto j = ((*prev)[i])->begin(); j != ((*prev)[i])->end(); j++)
+        (*prev)[i].begin();
+        for(auto j = ((*prev)[i]).begin(); j != ((*prev)[i]).end(); j++)
         {
                 change |= out->insert(*j);     
 #if PRINT_PASS_DEBUG                
@@ -120,10 +121,10 @@ void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* d
 
 void LivenessFrame::boundaryCondition(SetVector<StringRef>* boundSet, Function* scope)
 {
-        scope->begin();
+    boundSet->clear();
 }
 
-void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) // only necessary for backwards analysis
+void LivenessFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
 {         
     auto phi_it = Phi->getParent()->begin();
     while(const PHINode* phi_pt = dyn_cast<PHINode>(&*phi_it))
@@ -132,7 +133,7 @@ void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode*
         {
             BasicBlock* BB = phi_pt->getIncomingBlock(e);
             if(BB != BBtoPhiBB){
-                PhiInSet->remove(phi_pt->getIncomingValue(e)->getName());
+                PhiSet->remove(phi_pt->getIncomingValue(e)->getName());
             }
         }
         phi_it++;
@@ -142,7 +143,7 @@ void LivenessFrame::handlePrevPhi(SetVector<StringRef>* PhiInSet, const PHINode*
 
 void LivenessFrame::emptySet(SetVector<StringRef>* dom)
 {
-    // do nothing
+    dom->clear();
 }           
 
 LivenessFrame::~LivenessFrame(){};
