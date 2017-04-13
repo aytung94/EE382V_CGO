@@ -2,7 +2,7 @@
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/SetVector.h>
-#include <llvm/ADT/StringRef.h>
+#include <llvm/IR/Value.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
@@ -11,25 +11,25 @@ ReachingDefinitionsFrame::ReachingDefinitionsFrame(Function* func, bool dir, boo
 };
 
 
-void ReachingDefinitionsFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
+void ReachingDefinitionsFrame::genFunction(const Instruction* ins, SetVector<Value*>* genSet)
 {    
-    genSet->insert(ins->getName());
+    genSet->insert((Value*)ins);
     
 #if PRINT_PASS_DEBUG            
     outs() << "\n gen function " << ins->getName();
 #endif   
 }
 
-void ReachingDefinitionsFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
+void ReachingDefinitionsFrame::killFunction(const Instruction* ins, SetVector<Value*>* killSet)
 {    
-    killSet->insert(ins->getName());
+    killSet->insert((Value*)ins);
 #if PRINT_PASS_DEBUG            
     outs() << "\n kill function " << ins->getName();
 #endif    
       
 }
 
-bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>>* prev)
+bool ReachingDefinitionsFrame::meetFunction(SetVector<Value*>* in, SetVector<Value*>* out, vector<SetVector<Value*>>* prev)
 {
 #if PRINT_PASS_DEBUG    
     static int i;
@@ -51,7 +51,7 @@ bool ReachingDefinitionsFrame::meetFunction(SetVector<StringRef>* in, SetVector<
     return change;
 }
 
-bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out)
+bool ReachingDefinitionsFrame::transferFunction(SetVector<Value*>* gen, SetVector<Value*>* kill, SetVector<Value*>* in, SetVector<Value*>* out)
 {
 #if PRINT_PASS_DEBUG        
     static int i;
@@ -80,7 +80,7 @@ bool ReachingDefinitionsFrame::transferFunction(SetVector<StringRef>* gen, SetVe
    
     return change;
 }
-void ReachingDefinitionsFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1)
+void ReachingDefinitionsFrame::unionSet(SetVector<Value*>* dom0, SetVector<Value*>* dom1)
 {
     for(auto it = dom1->begin(); it != dom1->end(); it++)
     {
@@ -88,21 +88,21 @@ void ReachingDefinitionsFrame::unionSet(SetVector<StringRef>* dom0, SetVector<St
     } 
 }
 
-void ReachingDefinitionsFrame::boundaryCondition(SetVector<StringRef>* boundSet, Function* scope)
+void ReachingDefinitionsFrame::boundaryCondition(SetVector<Value*>* boundSet, Function* scope)
 {
     for(auto a = scope->getArgumentList().begin(); a != scope->getArgumentList().end(); a++)
     {
-        boundSet->insert(a->getName());
+        boundSet->insert((Value*)&*a);
     }    
 }
 
-void ReachingDefinitionsFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
+void ReachingDefinitionsFrame::handlePhi(SetVector<Value*>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
 {       
     // do nothing
 }
 
 
-void ReachingDefinitionsFrame::emptySet(SetVector<StringRef>* dom)
+void ReachingDefinitionsFrame::emptySet(SetVector<Value*>* dom)
 {
     dom->clear();
 }           

@@ -1,6 +1,6 @@
 
 ******  DataFlow Result for function small  ******
-{ arg  }
+{ arg   }
 bb:
   %tmp15 = mul nsw i32 %arg, %arg
   %tmp17 = sdiv i32 %tmp15, 2

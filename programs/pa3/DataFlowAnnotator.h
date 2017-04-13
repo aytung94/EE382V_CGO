@@ -76,7 +76,7 @@ private:
 	{
 		os << "{ ";
 		for (auto v: state)
-			os << v << " ";
+			os << v->getName() << " ";
 		os << "}";
 	}
 

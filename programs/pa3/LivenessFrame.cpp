@@ -2,7 +2,7 @@
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/SetVector.h>
-#include <llvm/ADT/StringRef.h>
+#include <llvm/IR/Value.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
@@ -11,13 +11,13 @@ using namespace llvm;
 LivenessFrame::LivenessFrame(Function* func, bool dir, bool init):DataFlowFrame(func, dir, init){};
 
 
-void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* genSet)
+void LivenessFrame::genFunction(const Instruction* ins, SetVector<Value*>* genSet)
 {
     if(const BranchInst* b_ins = dyn_cast<BranchInst>(ins))
     {
         if(b_ins->isConditional())
         {
-            genSet->insert(b_ins->getCondition()->getName());
+            genSet->insert(b_ins->getCondition());
 #if PRINT_PASS_DEBUG        
             outs() << "\n gen function " << b_ins->getCondition()->getName();
 #endif         
@@ -27,7 +27,7 @@ void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* ge
     {
         for(auto a = c_ins->arg_begin(); a != c_ins->arg_end(); a++)
         {
-            genSet->insert(a->get()->getName());
+            genSet->insert(a->get());
 #if PRINT_PASS_DEBUG        
             outs() << "\n gen function " << a->get()->getName();
 #endif        
@@ -37,7 +37,7 @@ void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* ge
     {
         for(int p = 0; p < (int)p_ins->getNumIncomingValues(); p++)
         {
-            genSet->insert(p_ins->getIncomingValue(p)->getName());
+            genSet->insert(p_ins->getIncomingValue(p));
 #if PRINT_PASS_DEBUG        
             outs() << "\n gen function " << p_ins->getIncomingValue(p)->getName();
 #endif             
@@ -47,7 +47,7 @@ void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* ge
     {
         for(auto v = ins->op_begin(); v != ins->op_end(); v++)
         {
-            genSet->insert(v->get()->getName());
+            genSet->insert(v->get());
 #if PRINT_PASS_DEBUG        
             outs() << "\n gen function " << v->get()->getName();
 #endif        
@@ -55,14 +55,14 @@ void LivenessFrame::genFunction(const Instruction* ins, SetVector<StringRef>* ge
     }
 }
 
-void LivenessFrame::killFunction(const Instruction* ins, SetVector<StringRef>* killSet)
+void LivenessFrame::killFunction(const Instruction* ins, SetVector<Value*>* killSet)
 {
-    killSet->insert(ins->getName());
+    killSet->insert((Value*) ins);
 #if PRINT_PASS_DEBUG            
     outs() << "\n kill function " << ins->getName();
 #endif    
 }
-bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>>* prev)
+bool LivenessFrame::meetFunction(SetVector<Value*>* in, SetVector<Value*>* out, vector<SetVector<Value*>>* prev)
 {
 #if PRINT_PASS_DEBUG    
     static int i;
@@ -84,7 +84,7 @@ bool LivenessFrame::meetFunction(SetVector<StringRef>* in, SetVector<StringRef>*
     
     return change;
 }
-bool LivenessFrame::transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out)
+bool LivenessFrame::transferFunction(SetVector<Value*>* gen, SetVector<Value*>* kill, SetVector<Value*>* in, SetVector<Value*>* out)
 {
 #if PRINT_PASS_DEBUG        
     static int i;
@@ -111,7 +111,7 @@ bool LivenessFrame::transferFunction(SetVector<StringRef>* gen, SetVector<String
    
     return change;
 }
-void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1)
+void LivenessFrame::unionSet(SetVector<Value*>* dom0, SetVector<Value*>* dom1)
 {
     for(auto it = dom1->begin(); it != dom1->end(); it++)
     {
@@ -119,12 +119,12 @@ void LivenessFrame::unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* d
     } 
 }
 
-void LivenessFrame::boundaryCondition(SetVector<StringRef>* boundSet, Function* scope)
+void LivenessFrame::boundaryCondition(SetVector<Value*>* boundSet, Function* scope)
 {
     boundSet->clear();
 }
 
-void LivenessFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
+void LivenessFrame::handlePhi(SetVector<Value*>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB) 
 {         
     auto phi_it = Phi->getParent()->begin();
     while(const PHINode* phi_pt = dyn_cast<PHINode>(&*phi_it))
@@ -133,7 +133,7 @@ void LivenessFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, 
         {
             BasicBlock* BB = phi_pt->getIncomingBlock(e);
             if(BB != BBtoPhiBB){
-                PhiSet->remove(phi_pt->getIncomingValue(e)->getName());
+                PhiSet->remove(phi_pt->getIncomingValue(e));
             }
         }
         phi_it++;
@@ -141,7 +141,7 @@ void LivenessFrame::handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, 
 }
 
 
-void LivenessFrame::emptySet(SetVector<StringRef>* dom)
+void LivenessFrame::emptySet(SetVector<Value*>* dom)
 {
     dom->clear();
 }           

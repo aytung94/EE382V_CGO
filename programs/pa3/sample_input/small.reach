@@ -13,11 +13,11 @@ bb20:                                             ; preds = %bb
   %tmp23 = add nsw i32 %tmp15, %tmp17
   %tmp26 = add nsw i32 %tmp23, %arg
   br label %bb27
-{  tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+{  tmp26 tmp23  tmp19 tmp17 tmp15 arg }
 ---
-{  tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+{  tmp26 tmp23  tmp19 tmp17 tmp15 arg }
 bb27:                                             ; preds = %bb20, %bb
   %tmp1.0 = phi i32 [ %tmp26, %bb20 ], [ %tmp15, %bb ]
   ret i32 %tmp1.0
-{  tmp1.0 tmp26 tmp23 tmp19 tmp17 tmp15 arg }
+{  tmp1.0  tmp26 tmp23  tmp19 tmp17 tmp15 arg }
 ---

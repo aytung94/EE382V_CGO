@@ -2,12 +2,12 @@
 
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/SetVector.h>
-#include <llvm/ADT/StringRef.h>
+#include <llvm/IR/Value.h>
 
 using namespace llvm;
 using namespace std;
 
-class LivenessFrame: public DataFlowFrame<SetVector<StringRef>, const BasicBlock>
+class LivenessFrame: public DataFlowFrame<SetVector<Value*>, const BasicBlock>
 {
 private:     
     
@@ -15,15 +15,15 @@ public:
     LivenessFrame(Function* func, bool dir, bool init);
    
     // User defined functions   
-    void genFunction(const Instruction* ins, SetVector<StringRef>* genSet);
-    void killFunction(const Instruction* ins, SetVector<StringRef>* killSet);
-    bool meetFunction(SetVector<StringRef>* in, SetVector<StringRef>* out, vector<SetVector<StringRef>>* prev);
-    bool transferFunction(SetVector<StringRef>* gen, SetVector<StringRef>* kill, SetVector<StringRef>* in, SetVector<StringRef>* out);
+    void genFunction(const Instruction* ins, SetVector<Value*>* genSet);
+    void killFunction(const Instruction* ins, SetVector<Value*>* killSet);
+    bool meetFunction(SetVector<Value*>* in, SetVector<Value*>* out, vector<SetVector<Value*>>* prev);
+    bool transferFunction(SetVector<Value*>* gen, SetVector<Value*>* kill, SetVector<Value*>* in, SetVector<Value*>* out);
     
-    void unionSet(SetVector<StringRef>* dom0, SetVector<StringRef>* dom1);
-    void boundaryCondition(SetVector<StringRef>* boundSet, Function* scope);
-    void handlePhi(SetVector<StringRef>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB);
-    void emptySet(SetVector<StringRef>* dom);
+    void unionSet(SetVector<Value*>* dom0, SetVector<Value*>* dom1);
+    void boundaryCondition(SetVector<Value*>* boundSet, Function* scope);
+    void handlePhi(SetVector<Value*>* PhiSet, const PHINode* Phi, const BasicBlock* BBtoPhiBB);
+    void emptySet(SetVector<Value*>* dom);
     
     ~LivenessFrame();     
 };
