@@ -5,42 +5,42 @@ bb:
   br label %bb4
 {  arg }
 ---
-{  arg tmp22 tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 tmp19 }
+{  arg  tmp22  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  tmp19 }
 bb4:                                              ; preds = %bb20, %bb
   %tmp1.0 = phi i32 [ 0, %bb ], [ %tmp22, %bb20 ]
   %tmp2.0 = phi i32 [ 0, %bb ], [ %tmp2.1, %bb20 ]
   %tmp7 = add nsw i32 %arg, 10
   %tmp8 = icmp slt i32 %tmp1.0, %tmp7
   br i1 %tmp8, label %bb9, label %bb23
-{  tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 tmp15 tmp2.1 tmp11 tmp19 }
+{  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22  tmp15 tmp2.1  tmp11  tmp19 }
 ---
-{  tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 tmp15 tmp2.1 tmp11 tmp19 }
+{  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22  tmp15 tmp2.1  tmp11  tmp19 }
 bb9:                                              ; preds = %bb4
   %tmp11 = call i32 @extra(i32 %tmp1.0)
   br label %bb12
-{  tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 tmp15 tmp2.1 tmp19 }
+{  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22  tmp15 tmp2.1  tmp19 }
 ---
-{  tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp19 tmp15 tmp2.1 tmp22 }
+{  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp19  tmp15 tmp2.1  tmp22 }
 bb12:                                             ; preds = %bb16, %bb9
   %tmp2.1 = phi i32 [ %tmp2.0, %bb9 ], [ %tmp19, %bb16 ]
   %tmp15 = icmp slt i32 %tmp2.1, %arg
   br i1 %tmp15, label %bb16, label %bb20
-{  tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp19 tmp22 }
+{  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp19  tmp22 }
 ---
-{  tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp19 tmp22 }
+{  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp19  tmp22 }
 bb16:                                             ; preds = %bb12
   %tmp19 = call i32 @extra2(i32 %tmp11, i32 %tmp2.1)
   br label %bb12
-{  tmp19 tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 }
+{  tmp19  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22 }
 ---
-{  tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp19 tmp22 }
+{  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp19  tmp22 }
 bb20:                                             ; preds = %bb12
   %tmp22 = call i32 @extra(i32 %tmp2.1)
   br label %bb4
-{  tmp22 tmp15 tmp2.1 tmp11 tmp8 tmp7 tmp2.0 tmp1.0 arg tmp19 }
+{  tmp22  tmp15 tmp2.1  tmp11  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp19 }
 ---
-{  tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 tmp15 tmp2.1 tmp11 tmp19 }
+{  tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22  tmp15 tmp2.1  tmp11  tmp19 }
 bb23:                                             ; preds = %bb4
   ret i32 %tmp1.0
-{  tmp8 tmp7 tmp2.0 tmp1.0 arg tmp22 tmp15 tmp2.1 tmp11 tmp19 }
+{   tmp8 tmp7 tmp2.0 tmp1.0  arg  tmp22  tmp15 tmp2.1  tmp11  tmp19 }
 ---

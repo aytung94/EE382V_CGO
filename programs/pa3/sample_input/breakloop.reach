@@ -1,0 +1,58 @@
+
+******  DataFlow Result for function main  ******
+{ arg arg1 }
+bb:
+  %tmp7 = getelementptr inbounds i8*, i8** %arg1, i64 1
+  %tmp8 = load i8*, i8** %tmp7, align 8
+  %tmp9 = call i32 @atoi(i8* %tmp8) #3
+  br label %bb10
+{  tmp9 tmp8 tmp7 arg arg1 }
+---
+{  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp19 }
+bb10:                                             ; preds = %bb26, %bb
+  %tmp5.0 = phi i32 [ 0, %bb ], [ %tmp28, %bb26 ]
+  %tmp13 = icmp slt i32 %tmp5.0, %tmp9
+  br i1 %tmp13, label %bb14, label %bb29
+{  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp17 tmp16  tmp19 }
+---
+{  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp17 tmp16  tmp19 }
+bb14:                                             ; preds = %bb10
+  %tmp16 = srem i32 %tmp5.0, 2
+  %tmp17 = icmp eq i32 0, %tmp16
+  br i1 %tmp17, label %bb18, label %bb20
+{  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp19 }
+---
+{  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp19 }
+bb18:                                             ; preds = %bb14
+  %tmp19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0))
+  br label %bb22
+{  tmp19  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21 }
+---
+{  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp21  tmp19 }
+bb20:                                             ; preds = %bb14
+  %tmp21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.1, i32 0, i32 0))
+  br label %bb22
+{  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp28  tmp24  tmp19 }
+---
+{  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28  tmp24 }
+bb22:                                             ; preds = %bb20, %bb18
+  %tmp24 = icmp eq i32 %tmp5.0, 7
+  br i1 %tmp24, label %bb25, label %bb26
+{  tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+---
+{  tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+bb25:                                             ; preds = %bb22
+  br label %bb29
+{   tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+---
+{  tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+bb26:                                             ; preds = %bb22
+  %tmp28 = add nsw i32 %tmp5.0, 1
+  br label %bb10
+{  tmp28  tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19 }
+---
+{   tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+bb29:                                             ; preds = %bb25, %bb10
+  ret i32 0
+{    tmp24  tmp21  tmp17 tmp16  tmp13 tmp5.0  tmp9 tmp8 tmp7 arg arg1  tmp19  tmp28 }
+---
