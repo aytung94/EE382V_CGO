@@ -1,5 +1,5 @@
 ; ModuleID = 'output.bc'
-source_filename = "test/simpleloop.cc"
+source_filename = "test/nestedloop.cc"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
@@ -8,43 +8,60 @@ target triple = "x86_64-unknown-linux-gnu"
 
 ; Function Attrs: norecurse uwtable
 define i32 @main(i32, i8**) #0 {
-  %3 = getelementptr inbounds i8*, i8** %1, i64 1
-  %4 = load i8*, i8** %3, align 8
-  %5 = call i32 @atoi(i8* %4) #3
-  br label %6
+  br label %3
 
-; <label>:6:                                      ; preds = %17, %2
-  %.0 = phi i32 [ 0, %2 ], [ %18, %17 ]
+; <label>:3:                                      ; preds = %23, %2
+  %.01 = phi i32 [ 0, %2 ], [ %24, %23 ]
+  call void @init_path_reg(i32 2)
+  %4 = icmp ne i32 %.01, 100
+  br i1 %4, label %5, label %25
+
+; <label>:5:                                      ; preds = %3
+  %6 = getelementptr inbounds i8*, i8** %1, i64 1
+  %7 = load i8*, i8** %6, align 8
+  %8 = call i32 @atoi(i8* %7) #3
+  br label %9
+
+; <label>:9:                                      ; preds = %20, %5
+  %.0 = phi i32 [ 0, %5 ], [ %21, %20 ]
   call void @init_path_reg(i32 1)
-  %7 = icmp slt i32 %.0, %5
-  br i1 %7, label %8, label %19
+  %10 = icmp slt i32 %.0, %8
+  br i1 %10, label %11, label %22
 
-; <label>:8:                                      ; preds = %6
-  %9 = add nsw i32 %.0, %0
-  %10 = srem i32 %9, 3
-  %11 = icmp ne i32 %10, 0
-  br i1 %11, label %12, label %14
+; <label>:11:                                     ; preds = %9
+  %12 = add nsw i32 %.0, %0
+  %13 = srem i32 %12, 3
+  %14 = icmp ne i32 %13, 0
+  br i1 %14, label %15, label %17
 
-; <label>:12:                                     ; preds = %8
-  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i32 0, i32 0))
-  br label %16
+; <label>:15:                                     ; preds = %11
+  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str, i32 0, i32 0))
+  br label %19
 
-; <label>:14:                                     ; preds = %8
+; <label>:17:                                     ; preds = %11
   call void @inc_path_reg(i32 1, i32 1)
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1, i32 0, i32 0))
-  br label %16
+  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1, i32 0, i32 0))
+  br label %19
 
-; <label>:16:                                     ; preds = %14, %12
-  br label %17
+; <label>:19:                                     ; preds = %17, %15
+  br label %20
 
-; <label>:17:                                     ; preds = %16
-  %18 = add nsw i32 %.0, 1
+; <label>:20:                                     ; preds = %19
+  %21 = add nsw i32 %.0, 1
   call void @finalize_path_reg(i32 1)
-  br label %6
+  br label %9
 
-; <label>:19:                                     ; preds = %6
+; <label>:22:                                     ; preds = %9
   call void @inc_path_reg(i32 1, i32 2)
   call void @finalize_path_reg(i32 1)
+  br label %23
+
+; <label>:23:                                     ; preds = %22
+  %24 = add nsw i32 %.01, 1
+  call void @finalize_path_reg(i32 2)
+  br label %3
+
+; <label>:25:                                     ; preds = %3
   call void @dump_path_regs()
   ret i32 0
 }

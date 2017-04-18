@@ -12,12 +12,14 @@ main(int argc, char **argv) {
       } else {
         printf("Falsey\n");
       }
+      if ((i + argc) % 5) {
+        printf("Finn\n");
+      } else {
+        printf("Jake\n");
+      }
     }
 
   }
-
   dump_path_regs();
   return 0;
 }
-
-

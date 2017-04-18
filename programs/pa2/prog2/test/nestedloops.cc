@@ -14,8 +14,15 @@ main(int argc, char **argv) {
       }
     }
 
-  }
+    for (int i = 0, e = atoi(argv[1])/2; i < e; ++i) {
+      if ((i + argc) % 3) {
+        printf("Finn\n");
+      } else {
+        printf("Jake\n");
+      }
+    }
 
+  }
   dump_path_regs();
   return 0;
 }
