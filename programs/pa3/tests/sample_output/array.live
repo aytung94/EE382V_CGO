@@ -1,0 +1,39 @@
+
+******  DataFlow Result for function array  ******
+{   arg1   arg2 arg }
+bb:
+  %tmp5 = alloca [10 x i32], align 16
+  br label %bb7
+{  arg1  tmp5  arg2 arg  }
+---
+{  tmp25 arg1  tmp5  arg2 arg  }
+bb7:                                              ; preds = %bb23, %bb
+  %tmp6.0 = phi i32 [ 0, %bb ], [ %tmp25, %bb23 ]
+  %tmp10 = icmp slt i32 %tmp6.0, %arg1
+  br i1 %tmp10, label %bb11, label %bb26
+{ tmp6.0  tmp5  arg2 arg  arg1 }
+---
+{ tmp6.0  tmp5  arg2 arg  arg1 }
+bb11:                                             ; preds = %bb7
+  %tmp13 = srem i32 %tmp6.0, 10
+  %tmp14 = sext i32 %tmp13 to i64
+  %tmp15 = getelementptr inbounds [10 x i32], [10 x i32]* %tmp5, i64 0, i64 %tmp14
+  %tmp16 = load i32, i32* %tmp15, align 4
+  %tmp18 = add nsw i32 %tmp16, %arg2
+  %tmp20 = sext i32 %tmp6.0 to i64
+  %tmp22 = getelementptr inbounds i32, i32* %arg, i64 %tmp20
+  store i32 %tmp18, i32* %tmp22, align 4
+  br label %bb23
+{ tmp6.0  arg1  tmp5  arg2 arg }
+---
+{ tmp6.0  arg1  tmp5  arg2 arg }
+bb23:                                             ; preds = %bb11
+  %tmp25 = add nsw i32 %tmp6.0, 1
+  br label %bb7
+{ tmp25 arg1  tmp5  arg2 arg  }
+---
+{ tmp6.0 }
+bb26:                                             ; preds = %bb7
+  ret i32 %tmp6.0
+{ }
+---

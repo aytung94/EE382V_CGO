@@ -1,0 +1,32 @@
+
+******  DataFlow Result for function sum  ******
+{ arg  arg1 }
+bb:
+  br label %bb6
+{ arg  arg1 }
+---
+{ arg tmp16  tmp13 arg1 }
+bb6:                                              ; preds = %bb14, %bb
+  %tmp3.0 = phi i32 [ %arg, %bb ], [ %tmp16, %bb14 ]
+  %tmp4.0 = phi i32 [ 1, %bb ], [ %tmp13, %bb14 ]
+  %tmp9 = icmp slt i32 %tmp3.0, %arg1
+  br i1 %tmp9, label %bb10, label %bb17
+{ tmp4.0 tmp3.0  arg1 }
+---
+{ tmp4.0 tmp3.0  arg1 }
+bb10:                                             ; preds = %bb6
+  %tmp13 = mul nsw i32 %tmp4.0, %tmp3.0
+  br label %bb14
+{ tmp3.0  tmp13 arg1 }
+---
+{ tmp3.0  tmp13 arg1 }
+bb14:                                             ; preds = %bb10
+  %tmp16 = add nsw i32 %tmp3.0, 1
+  br label %bb6
+{ tmp16 tmp13 arg1 }
+---
+{ tmp4.0 }
+bb17:                                             ; preds = %bb6
+  ret i32 %tmp4.0
+{ }
+---

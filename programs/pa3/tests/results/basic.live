@@ -1,0 +1,32 @@
+
+******  DataFlow Result for function sum  ******
+{ b a }
+entry:
+  br label %for.cond
+{ b a }
+---
+{ inc b mul a }
+for.cond:                                         ; preds = %for.inc, %entry
+  %i.0 = phi i32 [ %a, %entry ], [ %inc, %for.inc ]
+  %res.0 = phi i32 [ 1, %entry ], [ %mul, %for.inc ]
+  %cmp = icmp slt i32 %i.0, %b
+  br i1 %cmp, label %for.body, label %for.end
+{ res.0 i.0 b }
+---
+{ res.0 i.0 b }
+for.body:                                         ; preds = %for.cond
+  %mul = mul nsw i32 %res.0, %i.0
+  br label %for.inc
+{ mul i.0 b }
+---
+{ mul i.0 b }
+for.inc:                                          ; preds = %for.body
+  %inc = add nsw i32 %i.0, 1
+  br label %for.cond
+{ inc mul b }
+---
+{ res.0 }
+for.end:                                          ; preds = %for.cond
+  ret i32 %res.0
+{ }
+---

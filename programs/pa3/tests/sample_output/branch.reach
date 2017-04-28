@@ -1,0 +1,104 @@
+
+******  DataFlow Result for function small  ******
+{ arg }
+bb:
+  %tmp4 = add nsw i32 100, %arg
+  %tmp6 = mul nsw i32 25, %arg
+  store i32 1, i32* getelementptr inbounds ([10 x i32], [10 x i32]* @A, i64 0, i64 0), align 16
+  %tmp9 = icmp sgt i32 %tmp4, %tmp6
+  br i1 %tmp9, label %bb10, label %bb13
+{  tmp9  tmp6 tmp4 arg }
+---
+{  tmp9  tmp6 tmp4 arg }
+bb10:                                             ; preds = %bb
+  %tmp12 = call i32 @extra(i32 %tmp6)
+  br label %bb23
+{  tmp12  tmp9  tmp6 tmp4 arg }
+---
+{  tmp9  tmp6 tmp4 arg }
+bb13:                                             ; preds = %bb
+  %tmp16 = icmp slt i32 %tmp4, %tmp6
+  br i1 %tmp16, label %bb17, label %bb20
+{  tmp16  tmp9  tmp6 tmp4 arg }
+---
+{  tmp16  tmp9  tmp6 tmp4 arg }
+bb17:                                             ; preds = %bb13
+  %tmp19 = call i32 @extra(i32 %tmp4)
+  br label %bb22
+{  tmp19  tmp16  tmp9  tmp6 tmp4 arg }
+---
+{  tmp16  tmp9  tmp6 tmp4 arg }
+bb20:                                             ; preds = %bb13
+  %tmp21 = call i32 @extra(i32 0)
+  br label %bb22
+{  tmp21  tmp16  tmp9  tmp6 tmp4 arg }
+---
+{  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19 }
+bb22:                                             ; preds = %bb20, %bb17
+  %tmp2.0 = phi i32 [ %tmp19, %bb17 ], [ %tmp21, %bb20 ]
+  br label %bb23
+{  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19 }
+---
+{  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb23:                                             ; preds = %bb22, %bb10
+  %tmp2.1 = phi i32 [ %tmp12, %bb10 ], [ %tmp2.0, %bb22 ]
+  %tmp26 = icmp sgt i32 %tmp4, %tmp2.1
+  br i1 %tmp26, label %bb27, label %bb40
+{  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb27:                                             ; preds = %bb23
+  %tmp30 = add nsw i32 %tmp2.1, 10
+  %tmp31 = icmp sgt i32 %tmp4, %tmp30
+  br i1 %tmp31, label %bb32, label %bb35
+{  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb32:                                             ; preds = %bb27
+  %tmp34 = call i32 @extra(i32 %tmp2.1)
+  br label %bb39
+{  tmp34  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb35:                                             ; preds = %bb27
+  %tmp37 = add nsw i32 %tmp2.1, 10
+  %tmp38 = call i32 @extra(i32 %tmp37)
+  br label %bb39
+{  tmp38 tmp37  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp38 tmp37  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp34 }
+bb39:                                             ; preds = %bb35, %bb32
+  %tmp2.2 = phi i32 [ %tmp34, %bb32 ], [ %tmp38, %bb35 ]
+  br label %bb50
+{  tmp2.2  tmp38 tmp37  tmp31 tmp30  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp34 }
+---
+{  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb40:                                             ; preds = %bb23
+  %tmp43 = icmp slt i32 %tmp4, %tmp2.1
+  br i1 %tmp43, label %bb44, label %bb47
+{  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb44:                                             ; preds = %bb40
+  %tmp46 = call i32 @extra(i32 %tmp4)
+  br label %bb49
+{  tmp46  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+bb47:                                             ; preds = %bb40
+  %tmp48 = call i32 @extra(i32 0)
+  br label %bb49
+{  tmp48  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12 }
+---
+{  tmp48  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp46 }
+bb49:                                             ; preds = %bb47, %bb44
+  %tmp2.3 = phi i32 [ %tmp46, %bb44 ], [ %tmp48, %bb47 ]
+  br label %bb50
+{  tmp2.3  tmp48  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp46 }
+---
+{  tmp2.3  tmp48  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp46  tmp2.2  tmp38 tmp37  tmp31 tmp30  tmp34 }
+bb50:                                             ; preds = %bb49, %bb39
+  %tmp2.4 = phi i32 [ %tmp2.2, %bb39 ], [ %tmp2.3, %bb49 ]
+  ret i32 %tmp2.4
+{  tmp2.4  tmp2.3  tmp48  tmp43  tmp26 tmp2.1  tmp2.0  tmp21  tmp16  tmp9  tmp6 tmp4 arg  tmp19  tmp12  tmp46  tmp2.2  tmp38 tmp37  tmp31 tmp30  tmp34 }
+---

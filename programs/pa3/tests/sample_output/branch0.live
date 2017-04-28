@@ -1,0 +1,36 @@
+
+******  DataFlow Result for function small  ******
+{  arg  A   }
+bb:
+  %tmp5 = add nsw i32 100, %arg
+  %tmp7 = mul nsw i32 25, %arg
+  %tmp10 = icmp sgt i32 %tmp5, %tmp7
+  br i1 %tmp10, label %bb11, label %bb23
+{ tmp5 A   tmp7 }
+---
+{ tmp5 A   tmp7 }
+bb11:                                             ; preds = %bb
+  %tmp13 = sext i32 %tmp5 to i64
+  %tmp14 = getelementptr inbounds [1000 x i32], [1000 x i32]* @A, i64 0, i64 %tmp13
+  store i32 0, i32* %tmp14, align 4
+  call void @error(i32 %tmp5)
+  %tmp17 = call i32 @extra(i32 %tmp7)
+  %tmp19 = sext i32 %tmp7 to i64
+  %tmp20 = getelementptr inbounds [1000 x i32], [1000 x i32]* @A, i64 0, i64 %tmp19
+  %tmp21 = load i32, i32* %tmp20, align 4
+  %tmp22 = add nsw i32 %tmp17, %tmp21
+  br label %bb26
+{ tmp22 }
+---
+{ tmp5 }
+bb23:                                             ; preds = %bb
+  %tmp25 = call i32 @extra(i32 %tmp5)
+  br label %bb26
+{ tmp25 }
+---
+{ tmp22 tmp25 }
+bb26:                                             ; preds = %bb23, %bb11
+  %tmp3.0 = phi i32 [ %tmp22, %bb11 ], [ %tmp25, %bb23 ]
+  ret i32 %tmp3.0
+{ }
+---

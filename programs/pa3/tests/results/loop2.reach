@@ -1,0 +1,54 @@
+
+******  DataFlow Result for function f  ******
+{ s1 s }
+entry:
+  br label %for.cond
+{ s1 s }
+---
+{ inc cmp1 rem cmp2 s1 s i.0 call cmp }
+for.cond:                                         ; preds = %for.inc, %entry
+  %i.0 = phi i32 [ 0, %entry ], [ %inc, %for.inc ]
+  %cmp = icmp slt i32 %i.0, %s
+  br i1 %cmp, label %for.body, label %for.end
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp call i.0 s s1 cmp2 rem cmp1 }
+for.body:                                         ; preds = %for.cond
+  %rem = srem i32 %i.0, 2
+  %cmp1 = icmp eq i32 %rem, 0
+  br i1 %cmp1, label %if.then, label %if.end
+{ cmp call i.0 s s1 cmp2 rem cmp1 }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+if.then:                                          ; preds = %for.body
+  br label %for.inc
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+if.end:                                           ; preds = %for.body
+  %call = call i32 @extra(i32 %i.0)
+  %cmp2 = icmp sgt i32 %call, 0
+  br i1 %cmp2, label %if.then3, label %if.end4
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+if.then3:                                         ; preds = %if.end
+  br label %for.end
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+if.end4:                                          ; preds = %if.end
+  br label %for.inc
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+for.inc:                                          ; preds = %if.end4, %if.then
+  %inc = add nsw i32 %i.0, 1
+  br label %for.cond
+{ inc cmp1 rem cmp2 s1 s i.0 call cmp }
+---
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+for.end:                                          ; preds = %if.then3, %for.cond
+  ret i32 %i.0
+{ cmp1 rem cmp2 s1 s i.0 call cmp }
+---

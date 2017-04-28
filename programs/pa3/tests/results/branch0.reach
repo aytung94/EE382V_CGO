@@ -1,0 +1,36 @@
+
+******  DataFlow Result for function small  ******
+{ s }
+entry:
+  %add = add nsw i32 100, %s
+  %mul = mul nsw i32 25, %s
+  %cmp = icmp sgt i32 %add, %mul
+  br i1 %cmp, label %if.then, label %if.else
+{ mul cmp add s }
+---
+{ s add cmp mul }
+if.then:                                          ; preds = %entry
+  %idxprom = sext i32 %add to i64
+  %arrayidx = getelementptr inbounds [1000 x i32], [1000 x i32]* @A, i64 0, i64 %idxprom
+  store i32 0, i32* %arrayidx, align 4
+  call void @error(i32 %add)
+  %call = call i32 @extra(i32 %mul)
+  %idxprom1 = sext i32 %mul to i64
+  %arrayidx2 = getelementptr inbounds [1000 x i32], [1000 x i32]* @A, i64 0, i64 %idxprom1
+  %tmp8 = load i32, i32* %arrayidx2, align 4
+  %add3 = add nsw i32 %call, %tmp8
+  br label %if.end
+{ add3 mul tmp8 cmp add call s arrayidx2 arrayidx idxprom idxprom1 }
+---
+{ s add cmp mul }
+if.else:                                          ; preds = %entry
+  %call4 = call i32 @extra(i32 %add)
+  br label %if.end
+{ call4 s add cmp mul }
+---
+{ idxprom1 idxprom mul tmp8 cmp add call s arrayidx2 call4 add3 arrayidx }
+if.end:                                           ; preds = %if.else, %if.then
+  %c.0 = phi i32 [ %add3, %if.then ], [ %call4, %if.else ]
+  ret i32 %c.0
+{ idxprom1 idxprom mul tmp8 c.0 cmp add call s arrayidx2 arrayidx }
+---

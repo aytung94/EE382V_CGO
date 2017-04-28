@@ -1,0 +1,31 @@
+
+******  DataFlow Result for function f  ******
+{ s1 s }
+entry:
+  br label %for.cond
+{ s1 s }
+---
+{ inc cmp s i.0 s1 call }
+for.cond:                                         ; preds = %for.inc, %entry
+  %i.0 = phi i32 [ 0, %entry ], [ %inc, %for.inc ]
+  %cmp = icmp slt i32 %i.0, %s
+  br i1 %cmp, label %for.body, label %for.end
+{ cmp s i.0 s1 call }
+---
+{ call s1 i.0 s cmp }
+for.body:                                         ; preds = %for.cond
+  %call = call i32 @extra(i32 %i.0)
+  br label %for.inc
+{ call s1 i.0 s cmp }
+---
+{ cmp s i.0 s1 call }
+for.inc:                                          ; preds = %for.body
+  %inc = add nsw i32 %i.0, 1
+  br label %for.cond
+{ inc cmp s i.0 s1 call }
+---
+{ call s1 i.0 s cmp }
+for.end:                                          ; preds = %for.cond
+  ret i32 %i.0
+{ call s1 i.0 s cmp }
+---

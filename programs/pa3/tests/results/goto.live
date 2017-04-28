@@ -1,0 +1,51 @@
+
+******  DataFlow Result for function go2  ******
+{ id }
+entry:
+  br label %while.cond
+{ id }
+---
+{ tmp5 id }
+while.cond:                                       ; preds = %if.end, %entry
+  %p.0 = phi %struct.user* [ @u, %entry ], [ %tmp5, %if.end ]
+  %tobool = icmp ne %struct.user* %p.0, null
+  br i1 %tobool, label %while.body, label %while.end
+{ p.0 id }
+---
+{ p.0 id }
+while.body:                                       ; preds = %while.cond
+  %id1 = getelementptr inbounds %struct.user, %struct.user* %p.0, i32 0, i32 0
+  %tmp2 = load i32, i32* %id1, align 8
+  %cmp = icmp eq i32 %tmp2, %id
+  br i1 %cmp, label %if.then, label %if.else
+{ p.0 id }
+---
+{ p.0 }
+if.then:                                          ; preds = %while.body
+  br label %end
+{ p.0 }
+---
+{ p.0 id }
+if.else:                                          ; preds = %while.body
+  %next = getelementptr inbounds %struct.user, %struct.user* %p.0, i32 0, i32 1
+  %tmp5 = load %struct.user*, %struct.user** %next, align 8
+  br label %if.end
+{ tmp5 id }
+---
+{ tmp5 id }
+if.end:                                           ; preds = %if.else
+  br label %while.cond
+{ tmp5 id }
+---
+{ p.0 id }
+while.end:                                        ; preds = %while.cond
+  store i32 %id, i32* getelementptr inbounds (%struct.user, %struct.user* @u, i32 0, i32 0), align 8
+  br label %end
+{ p.0 }
+---
+{ p.0 }
+end:                                              ; preds = %while.end, %if.then
+  store %struct.user* %p.0, %struct.user** @lu, align 8
+  ret %struct.user* %p.0
+{ }
+---

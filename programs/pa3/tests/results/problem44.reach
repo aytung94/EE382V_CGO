@@ -1,0 +1,136 @@
+
+******  DataFlow Result for function main  ******
+{ }
+entry:
+  br label %for.cond
+{ }
+---
+{ sub cmp2 cmp tobool7 min.1 call min.0 call4 sub8 tobool cmp9 i.0 add call5 inc14 call6 j.0 }
+for.cond:                                         ; preds = %for.inc13, %entry
+  %i.0 = phi i32 [ 1, %entry ], [ %inc14, %for.inc13 ]
+  %min.0 = phi i32 [ -1, %entry ], [ %min.1, %for.inc13 ]
+  %cmp = icmp ult i32 %i.0, 10000
+  br i1 %cmp, label %for.body, label %for.end15
+{ sub cmp2 cmp tobool7 call min.0 call4 sub8 tobool cmp9 i.0 add call5 call6 j.0 }
+---
+{ j.0 call6 call5 add i.0 sub cmp2 cmp tobool7 call min.0 call4 sub8 tobool cmp9 }
+for.body:                                         ; preds = %for.cond
+  br label %for.cond1
+{ j.0 call6 call5 add i.0 sub cmp2 cmp tobool7 call min.0 call4 sub8 tobool cmp9 }
+---
+{ call5 add i.0 min.3 tobool sub8 call4 cmp9 min.0 j.0 call min.1 tobool7 cmp inc call6 sub cmp2 }
+for.cond1:                                        ; preds = %for.inc, %for.body
+  %j.0 = phi i32 [ %i.0, %for.body ], [ %inc, %for.inc ]
+  %min.1 = phi i32 [ %min.0, %for.body ], [ %min.3, %for.inc ]
+  %cmp2 = icmp ult i32 %j.0, 10000
+  br i1 %cmp2, label %for.body3, label %for.end
+{ call5 add i.0 tobool sub8 call4 cmp9 min.0 j.0 call min.1 tobool7 cmp call6 sub cmp2 }
+---
+{ cmp2 sub call6 call5 add i.0 cmp9 tobool sub8 call4 min.0 j.0 cmp tobool7 min.1 call }
+for.body3:                                        ; preds = %for.cond1
+  %call = call i32 @pentagonal(i32 %i.0)
+  %call4 = call i32 @pentagonal(i32 %j.0)
+  %add = add i32 %call, %call4
+  %call5 = call i32 @is_pentagonal(i32 %add)
+  %tobool = icmp ne i32 %call5, 0
+  br i1 %tobool, label %land.lhs.true, label %if.end12
+{ cmp2 sub call6 call5 add i.0 cmp9 tobool sub8 call4 min.0 j.0 cmp tobool7 min.1 call }
+---
+{ call min.1 tobool7 cmp j.0 min.0 call6 cmp2 sub call5 add i.0 cmp9 tobool sub8 call4 }
+land.lhs.true:                                    ; preds = %for.body3
+  %sub = sub i32 %call4, %call
+  %call6 = call i32 @is_pentagonal(i32 %sub)
+  %tobool7 = icmp ne i32 %call6, 0
+  br i1 %tobool7, label %if.then, label %if.end12
+{ call min.1 tobool7 cmp j.0 min.0 call6 cmp2 sub call5 add i.0 cmp9 tobool sub8 call4 }
+---
+{ call4 sub8 tobool cmp9 i.0 add j.0 min.0 call5 call min.1 tobool7 cmp call6 cmp2 sub }
+if.then:                                          ; preds = %land.lhs.true
+  %sub8 = sub i32 %call4, %call
+  %cmp9 = icmp ult i32 %sub8, %min.1
+  br i1 %cmp9, label %if.then10, label %if.end
+{ call4 sub8 tobool cmp9 i.0 add j.0 min.0 call5 call min.1 tobool7 cmp call6 cmp2 sub }
+---
+{ sub cmp2 call6 call4 sub8 tobool cmp9 i.0 add j.0 min.0 cmp tobool7 min.1 call call5 }
+if.then10:                                        ; preds = %if.then
+  %sub11 = sub i32 %call4, %call
+  br label %if.end
+{ sub11 sub cmp2 call6 call4 sub8 tobool cmp9 i.0 add j.0 min.0 cmp tobool7 min.1 call call5 }
+---
+{ add i.0 cmp9 tobool sub8 call4 call6 call5 min.0 j.0 min.1 call tobool7 cmp sub11 sub cmp2 }
+if.end:                                           ; preds = %if.then10, %if.then
+  %min.2 = phi i32 [ %sub11, %if.then10 ], [ %min.1, %if.then ]
+  br label %if.end12
+{ min.2 add i.0 cmp9 tobool sub8 call4 call6 call5 min.0 j.0 min.1 call tobool7 cmp sub cmp2 }
+---
+{ add min.2 cmp tobool7 min.1 call call5 j.0 min.0 cmp9 i.0 tobool sub8 call4 sub cmp2 call6 }
+if.end12:                                         ; preds = %if.end, %land.lhs.true, %for.body3
+  %min.3 = phi i32 [ %min.2, %if.end ], [ %min.1, %land.lhs.true ], [ %min.1, %for.body3 ]
+  br label %for.inc
+{ min.3 add cmp tobool7 min.1 call call5 j.0 min.0 cmp9 i.0 tobool sub8 call4 sub cmp2 call6 }
+---
+{ call6 cmp2 sub call4 sub8 tobool i.0 min.3 add call5 cmp tobool7 min.1 call j.0 min.0 cmp9 }
+for.inc:                                          ; preds = %if.end12
+  %inc = add i32 %j.0, 1
+  br label %for.cond1
+{ call6 cmp2 sub call4 sub8 tobool i.0 min.3 add call5 inc cmp tobool7 min.1 call j.0 min.0 cmp9 }
+---
+{ cmp2 sub call6 call5 add i.0 cmp9 tobool sub8 call4 min.0 j.0 cmp tobool7 min.1 call }
+for.end:                                          ; preds = %for.cond1
+  br label %for.inc13
+{ cmp2 sub call6 call5 add i.0 cmp9 tobool sub8 call4 min.0 j.0 cmp tobool7 min.1 call }
+---
+{ call min.1 tobool7 cmp j.0 min.0 call6 cmp2 sub call5 add i.0 cmp9 tobool sub8 call4 }
+for.inc13:                                        ; preds = %for.end
+  %inc14 = add i32 %i.0, 1
+  br label %for.cond
+{ inc14 call min.1 tobool7 cmp j.0 min.0 call6 cmp2 sub call5 add i.0 cmp9 tobool sub8 call4 }
+---
+{ j.0 call6 call5 add i.0 sub cmp2 cmp tobool7 call min.0 call4 sub8 tobool cmp9 }
+for.end15:                                        ; preds = %for.cond
+  %call16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i32 0, i32 0), i32 %min.0)
+  ret i32 0
+{ call16 j.0 call6 call5 add i.0 sub cmp2 cmp tobool7 call min.0 call4 sub8 tobool cmp9 }
+---
+
+******  DataFlow Result for function pentagonal  ******
+{ n }
+entry:
+  %mul = mul i32 3, %n
+  %sub = sub i32 %mul, 1
+  %mul1 = mul i32 %n, %sub
+  %div = udiv i32 %mul1, 2
+  ret i32 %div
+{ div mul1 sub mul n }
+---
+
+******  DataFlow Result for function is_pentagonal  ******
+{ n }
+entry:
+  %mul = mul i32 24, %n
+  %add = add i32 1, %mul
+  %conv = uitofp i32 %add to double
+  %call = call double @sqrt(double %conv) #4
+  %conv1 = fptoui double %call to i32
+  %mul2 = mul i32 %conv1, %conv1
+  %mul3 = mul i32 24, %n
+  %add4 = add i32 1, %mul3
+  %cmp = icmp eq i32 %mul2, %add4
+  br i1 %cmp, label %land.rhs, label %land.end
+{ mul3 mul2 conv1 conv cmp add add4 call mul n }
+---
+{ n mul call add4 add cmp conv conv1 mul2 mul3 }
+land.rhs:                                         ; preds = %entry
+  %add6 = add i32 1, %conv1
+  %rem = urem i32 %add6, 6
+  %cmp7 = icmp eq i32 %rem, 0
+  br label %land.end
+{ cmp7 rem add6 mul3 mul2 conv1 conv cmp add add4 call mul n }
+---
+{ conv cmp conv1 n mul call rem add4 cmp7 add add6 mul3 mul2 }
+land.end:                                         ; preds = %land.rhs, %entry
+  %tmp5 = phi i1 [ false, %entry ], [ %cmp7, %land.rhs ]
+  %land.ext = zext i1 %tmp5 to i32
+  ret i32 %land.ext
+{ tmp5 conv cmp conv1 n mul call rem add4 add add6 mul3 land.ext mul2 }
+---

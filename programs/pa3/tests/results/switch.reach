@@ -1,0 +1,53 @@
+
+******  DataFlow Result for function sw  ******
+{ a }
+entry:
+  switch i32 %a, label %sw.default [
+    i32 0, label %sw.bb
+    i32 1, label %sw.bb1
+    i32 2, label %sw.bb2
+    i32 3, label %sw.bb3
+  ]
+{ a }
+---
+{ a }
+sw.bb:                                            ; preds = %entry
+  br label %return
+{ a }
+---
+{ a }
+sw.bb1:                                           ; preds = %entry
+  %add = add nsw i32 undef, 1
+  br label %sw.bb2
+{ add a }
+---
+{ add a }
+sw.bb2:                                           ; preds = %entry, %sw.bb1
+  %b.0 = phi i32 [ undef, %entry ], [ %add, %sw.bb1 ]
+  %mul = mul nsw i32 %b.0, 2
+  br label %sw.epilog
+{ mul b.0 a }
+---
+{ a }
+sw.bb3:                                           ; preds = %entry
+  %call = call i32 @f(i32 undef)
+  br label %sw.epilog
+{ call a }
+---
+{ a }
+sw.default:                                       ; preds = %entry
+  br label %return
+{ a }
+---
+{ b.0 mul call a }
+sw.epilog:                                        ; preds = %sw.bb3, %sw.bb2
+  %b.1 = phi i32 [ %call, %sw.bb3 ], [ %mul, %sw.bb2 ]
+  br label %return
+{ b.1 b.0 a }
+---
+{ a b.0 b.1 }
+return:                                           ; preds = %sw.epilog, %sw.default, %sw.bb
+  %retval.0 = phi i32 [ 0, %sw.default ], [ %b.1, %sw.epilog ], [ 1, %sw.bb ]
+  ret i32 %retval.0
+{ a retval.0 b.0 }
+---

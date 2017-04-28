@@ -1,0 +1,66 @@
+
+******  DataFlow Result for function small  ******
+{ s }
+entry:
+  %add = add nsw i32 100, %s
+  %mul = mul nsw i32 25, %s
+  %cmp = icmp sgt i32 %add, %mul
+  br i1 %cmp, label %if.then, label %if.else6
+{ cmp add mul s }
+---
+{ s mul add cmp }
+if.then:                                          ; preds = %entry
+  %add1 = add nsw i32 %mul, 10
+  %cmp2 = icmp sgt i32 %add, %add1
+  br i1 %cmp2, label %if.then3, label %if.else
+{ cmp2 add1 s mul add cmp }
+---
+{ cmp add mul s add1 cmp2 }
+if.then3:                                         ; preds = %if.then
+  %call = call i32 @extra(i32 %mul)
+  br label %if.end
+{ call cmp add mul s add1 cmp2 }
+---
+{ cmp add mul s add1 cmp2 }
+if.else:                                          ; preds = %if.then
+  %add4 = add nsw i32 %mul, 10
+  %call5 = call i32 @extra(i32 %add4)
+  br label %if.end
+{ add4 cmp call5 add mul s add1 cmp2 }
+---
+{ add4 call cmp call5 add mul s add1 cmp2 }
+if.end:                                           ; preds = %if.else, %if.then3
+  %b.0 = phi i32 [ %call, %if.then3 ], [ %call5, %if.else ]
+  br label %if.end13
+{ b.0 add4 cmp add mul s add1 cmp2 }
+---
+{ s mul add cmp }
+if.else6:                                         ; preds = %entry
+  %cmp7 = icmp slt i32 %add, %mul
+  br i1 %cmp7, label %if.then8, label %if.else10
+{ cmp7 s mul add cmp }
+---
+{ cmp add mul s cmp7 }
+if.then8:                                         ; preds = %if.else6
+  %call9 = call i32 @extra(i32 %add)
+  br label %if.end12
+{ call9 cmp add mul s cmp7 }
+---
+{ cmp add mul s cmp7 }
+if.else10:                                        ; preds = %if.else6
+  %call11 = call i32 @extra(i32 0)
+  br label %if.end12
+{ call11 cmp add mul s cmp7 }
+---
+{ call9 call11 cmp add mul s cmp7 }
+if.end12:                                         ; preds = %if.else10, %if.then8
+  %b.1 = phi i32 [ %call9, %if.then8 ], [ %call11, %if.else10 ]
+  br label %if.end13
+{ cmp add mul s b.1 cmp7 }
+---
+{ cmp2 add1 b.0 cmp add mul s add4 b.1 cmp7 }
+if.end13:                                         ; preds = %if.end12, %if.end
+  %b.2 = phi i32 [ %b.0, %if.end ], [ %b.1, %if.end12 ]
+  ret i32 %b.2
+{ b.2 cmp2 add1 cmp add mul s add4 cmp7 }
+---

@@ -1,0 +1,37 @@
+
+******  DataFlow Result for function sas  ******
+{  arg arg1 A   }
+bb:
+  %tmp4 = alloca [10 x i32], align 16
+  %tmp7 = icmp sgt i32 %arg, %arg1
+  br i1 %tmp7, label %bb8, label %bb10
+{ arg A  tmp4  arg1 }
+---
+{ arg A  tmp4  }
+bb8:                                              ; preds = %bb
+  br label %bb12
+{ arg A  tmp4  }
+---
+{ arg1 A  tmp4  }
+bb10:                                             ; preds = %bb
+  br label %bb12
+{ arg1 A  tmp4  }
+---
+{ arg arg1 A  tmp4  }
+bb12:                                             ; preds = %bb10, %bb8
+  %tmp13 = phi i32 [ %arg, %bb8 ], [ %arg1, %bb10 ]
+  %tmp15 = sext i32 %tmp13 to i64
+  %tmp16 = getelementptr inbounds [10 x i32], [10 x i32]* @A, i64 0, i64 %tmp15
+  %tmp17 = load i32, i32* %tmp16, align 4
+  %tmp19 = sext i32 %tmp13 to i64
+  %tmp20 = getelementptr inbounds [10 x i32], [10 x i32]* %tmp4, i64 0, i64 %tmp19
+  store i32 %tmp17, i32* %tmp20, align 4
+  %tmp22 = sext i32 %tmp13 to i64
+  %tmp23 = getelementptr inbounds [10 x i32], [10 x i32]* @A, i64 0, i64 %tmp22
+  store i32 0, i32* %tmp23, align 4
+  %tmp25 = sext i32 %tmp13 to i64
+  %tmp26 = getelementptr inbounds [10 x i32], [10 x i32]* @A, i64 0, i64 %tmp25
+  %tmp27 = load i32, i32* %tmp26, align 4
+  ret i32 %tmp27
+{ }
+---

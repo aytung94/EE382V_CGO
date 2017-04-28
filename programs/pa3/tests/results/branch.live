@@ -1,0 +1,104 @@
+
+******  DataFlow Result for function small  ******
+{ s }
+entry:
+  %add = add nsw i32 100, %s
+  %mul = mul nsw i32 25, %s
+  store i32 1, i32* getelementptr inbounds ([10 x i32], [10 x i32]* @A, i64 0, i64 0), align 16
+  %cmp = icmp sgt i32 %add, %mul
+  br i1 %cmp, label %if.then, label %if.else
+{ mul add }
+---
+{ mul add }
+if.then:                                          ; preds = %entry
+  %call = call i32 @extra(i32 %mul)
+  br label %if.end6
+{ call add }
+---
+{ mul add }
+if.else:                                          ; preds = %entry
+  %cmp1 = icmp slt i32 %add, %mul
+  br i1 %cmp1, label %if.then2, label %if.else4
+{ add }
+---
+{ add }
+if.then2:                                         ; preds = %if.else
+  %call3 = call i32 @extra(i32 %add)
+  br label %if.end
+{ call3 add }
+---
+{ add }
+if.else4:                                         ; preds = %if.else
+  %call5 = call i32 @extra(i32 0)
+  br label %if.end
+{ call5 add }
+---
+{ call5 call3 add }
+if.end:                                           ; preds = %if.else4, %if.then2
+  %b.0 = phi i32 [ %call3, %if.then2 ], [ %call5, %if.else4 ]
+  br label %if.end6
+{ b.0 add }
+---
+{ b.0 call add }
+if.end6:                                          ; preds = %if.end, %if.then
+  %b.1 = phi i32 [ %call, %if.then ], [ %b.0, %if.end ]
+  %cmp7 = icmp sgt i32 %add, %b.1
+  br i1 %cmp7, label %if.then8, label %if.else17
+{ b.1 add }
+---
+{ b.1 add }
+if.then8:                                         ; preds = %if.end6
+  %add9 = add nsw i32 %b.1, 10
+  %cmp10 = icmp sgt i32 %add, %add9
+  br i1 %cmp10, label %if.then11, label %if.else13
+{ b.1 }
+---
+{ b.1 }
+if.then11:                                        ; preds = %if.then8
+  %call12 = call i32 @extra(i32 %b.1)
+  br label %if.end16
+{ call12 }
+---
+{ b.1 }
+if.else13:                                        ; preds = %if.then8
+  %add14 = add nsw i32 %b.1, 10
+  %call15 = call i32 @extra(i32 %add14)
+  br label %if.end16
+{ call15 }
+---
+{ call15 call12 }
+if.end16:                                         ; preds = %if.else13, %if.then11
+  %b.2 = phi i32 [ %call12, %if.then11 ], [ %call15, %if.else13 ]
+  br label %if.end24
+{ b.2 }
+---
+{ b.1 add }
+if.else17:                                        ; preds = %if.end6
+  %cmp18 = icmp slt i32 %add, %b.1
+  br i1 %cmp18, label %if.then19, label %if.else21
+{ add }
+---
+{ add }
+if.then19:                                        ; preds = %if.else17
+  %call20 = call i32 @extra(i32 %add)
+  br label %if.end23
+{ call20 }
+---
+{ }
+if.else21:                                        ; preds = %if.else17
+  %call22 = call i32 @extra(i32 0)
+  br label %if.end23
+{ call22 }
+---
+{ call22 call20 }
+if.end23:                                         ; preds = %if.else21, %if.then19
+  %b.3 = phi i32 [ %call20, %if.then19 ], [ %call22, %if.else21 ]
+  br label %if.end24
+{ b.3 }
+---
+{ b.3 b.2 }
+if.end24:                                         ; preds = %if.end23, %if.end16
+  %b.4 = phi i32 [ %b.2, %if.end16 ], [ %b.3, %if.end23 ]
+  ret i32 %b.4
+{ }
+---

@@ -1,0 +1,23 @@
+
+******  DataFlow Result for function small  ******
+{ s }
+entry:
+  %call = call i32 @extra(i32 %s)
+  %cmp = icmp slt i32 %s, 0
+  br i1 %cmp, label %if.then, label %if.end
+{ call s }
+---
+{ call s }
+if.then:                                          ; preds = %entry
+  %call3 = call i32 @extra(i32 %s)
+  %call4 = call i32 @extra(i32 %call3)
+  br label %if.end
+{ call4 call }
+---
+{ call4 call }
+if.end:                                           ; preds = %if.then, %entry
+  %i.0 = phi i32 [ %call4, %if.then ], [ %call, %entry ]
+  %add = add nsw i32 %i.0, %call
+  ret i32 %add
+{ }
+---

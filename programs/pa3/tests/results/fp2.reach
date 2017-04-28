@@ -1,0 +1,37 @@
+
+******  DataFlow Result for function magic  ******
+{ f b a }
+entry:
+  %cmp = icmp sgt i32 %b, 0
+  br i1 %cmp, label %if.then, label %if.else
+{ f cmp b a }
+---
+{ a b cmp f }
+if.then:                                          ; preds = %entry
+  %call = call i32 %f(i32 %a, i32 %a)
+  br label %if.end4
+{ call a b cmp f }
+---
+{ a b cmp f }
+if.else:                                          ; preds = %entry
+  %cmp1 = icmp eq i32 %b, 0
+  br i1 %cmp1, label %if.then2, label %if.end
+{ cmp1 a b cmp f }
+---
+{ f cmp b a cmp1 }
+if.then2:                                         ; preds = %if.else
+  %call3 = call i32 @add(i32 0, i32 0)
+  br label %if.end
+{ call3 f cmp b a cmp1 }
+---
+{ call3 f cmp b a cmp1 }
+if.end:                                           ; preds = %if.then2, %if.else
+  br label %if.end4
+{ call3 f cmp b a cmp1 }
+---
+{ call call3 f cmp b a cmp1 }
+if.end4:                                          ; preds = %if.end, %if.then
+  %call5 = call i32 %f(i32 %b, i32 %b)
+  ret i32 %call5
+{ call call3 f cmp b call5 a cmp1 }
+---

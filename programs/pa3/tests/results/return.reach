@@ -1,0 +1,41 @@
+
+******  DataFlow Result for function returnX  ******
+{ b a }
+entry:
+  %add = add nsw i32 %a, %b
+  %add1 = add nsw i32 %add, %a
+  %cmp = icmp sgt i32 %a, 0
+  br i1 %cmp, label %if.then, label %if.end
+{ cmp add1 add b a }
+---
+{ a b add add1 cmp }
+if.then:                                          ; preds = %entry
+  %call = call i32 @ex(i32 %add1)
+  br label %return
+{ call a b add add1 cmp }
+---
+{ a b add add1 cmp }
+if.end:                                           ; preds = %entry
+  %call2 = call i32 @ex(i32 %add)
+  %cmp3 = icmp sgt i32 %call2, 0
+  br i1 %cmp3, label %if.then4, label %if.end6
+{ call2 a cmp3 b add add1 cmp }
+---
+{ cmp add1 add b cmp3 a call2 }
+if.then4:                                         ; preds = %if.end
+  %call5 = call i32 @ex(i32 0)
+  br label %return
+{ call5 cmp add1 add b cmp3 a call2 }
+---
+{ cmp add1 add b cmp3 a call2 }
+if.end6:                                          ; preds = %if.end
+  %call7 = call i32 @ex(i32 %call2)
+  br label %return
+{ call7 cmp add1 add b cmp3 a call2 }
+---
+{ call2 a cmp3 b add add1 cmp call call7 call5 }
+return:                                           ; preds = %if.end6, %if.then4, %if.then
+  %retval.0 = phi i32 [ %call, %if.then ], [ %call5, %if.then4 ], [ %call7, %if.end6 ]
+  ret i32 %retval.0
+{ retval.0 call2 a cmp3 b add add1 cmp }
+---

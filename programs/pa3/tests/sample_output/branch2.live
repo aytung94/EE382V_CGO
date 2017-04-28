@@ -1,0 +1,23 @@
+
+******  DataFlow Result for function small  ******
+{ arg  }
+bb:
+  %tmp5 = call i32 @extra(i32 %arg)
+  %tmp8 = icmp slt i32 %arg, 0
+  br i1 %tmp8, label %bb9, label %bb14
+{ arg tmp5 }
+---
+{ arg }
+bb9:                                              ; preds = %bb
+  %tmp11 = call i32 @extra(i32 %arg)
+  %tmp12 = call i32 @extra(i32 %tmp11)
+  br label %bb14
+{ tmp12 }
+---
+{ tmp12 tmp5 }
+bb14:                                             ; preds = %bb9, %bb
+  %tmp1.0 = phi i32 [ %tmp12, %bb9 ], [ %tmp5, %bb ]
+  %tmp17 = add nsw i32 %tmp1.0, %tmp5
+  ret i32 %tmp17
+{ }
+---

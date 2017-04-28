@@ -1,0 +1,119 @@
+
+******  DataFlow Result for function factor  ******
+{ n }
+entry:
+  %cmp = icmp eq i32 %n, 0
+  br i1 %cmp, label %if.then, label %if.else
+{ n }
+---
+{ }
+if.then:                                          ; preds = %entry
+  br label %return
+{ }
+---
+{ n }
+if.else:                                          ; preds = %entry
+  %sub = sub nsw i32 %n, 1
+  %call = call i32 @factor(i32 %sub)
+  %mul = mul nsw i32 %n, %call
+  br label %return
+{ mul }
+---
+{ mul }
+return:                                           ; preds = %if.else, %if.then
+  %retval.0 = phi i32 [ 1, %if.then ], [ %mul, %if.else ]
+  ret i32 %retval.0
+{ }
+---
+
+******  DataFlow Result for function recursive1  ******
+{ a }
+entry:
+  %rem = srem i32 %a, 2
+  %cmp = icmp eq i32 %rem, 0
+  br i1 %cmp, label %if.then, label %if.else
+{ a }
+---
+{ a }
+if.then:                                          ; preds = %entry
+  %call = call i32 @recursive2(i32 %a)
+  br label %return
+{ call }
+---
+{ a }
+if.else:                                          ; preds = %entry
+  %sub = sub nsw i32 %a, 1
+  %call1 = call i32 @recursive2(i32 %sub)
+  %add = add nsw i32 %a, %call1
+  br label %return
+{ add }
+---
+{ add call }
+return:                                           ; preds = %if.else, %if.then
+  %retval.0 = phi i32 [ %call, %if.then ], [ %add, %if.else ]
+  ret i32 %retval.0
+{ }
+---
+
+******  DataFlow Result for function recursive2  ******
+{ a }
+entry:
+  %rem = srem i32 %a, 2
+  %cmp = icmp ne i32 %rem, 0
+  br i1 %cmp, label %if.then, label %if.else
+{ a }
+---
+{ a }
+if.then:                                          ; preds = %entry
+  %call = call i32 @recursive1(i32 %a)
+  br label %return
+{ call }
+---
+{ a }
+if.else:                                          ; preds = %entry
+  %sub = sub nsw i32 %a, 1
+  %call1 = call i32 @recursive1(i32 %sub)
+  %add = add nsw i32 %a, %call1
+  br label %return
+{ add }
+---
+{ add call }
+return:                                           ; preds = %if.else, %if.then
+  %retval.0 = phi i32 [ %call, %if.then ], [ %add, %if.else ]
+  ret i32 %retval.0
+{ }
+---
+
+******  DataFlow Result for function start  ******
+{ b a fp }
+entry:
+  %call = call i32 %fp(i32 %a, i32 %b)
+  ret i32 %call
+{ }
+---
+
+******  DataFlow Result for function add  ******
+{ b a }
+entry:
+  %add = add nsw i32 %a, %b
+  ret i32 %add
+{ }
+---
+
+******  DataFlow Result for function sub  ******
+{ b a }
+entry:
+  %sub = sub nsw i32 %a, %b
+  ret i32 %sub
+{ }
+---
+
+******  DataFlow Result for function main  ******
+{ }
+entry:
+  %call = call i32 @factor(i32 10)
+  %call1 = call i32 @recursive1(i32 15)
+  %call2 = call i32 @start(i32 (i32, i32)* @add, i32 1, i32 2)
+  ret i32 0
+{ }
+---

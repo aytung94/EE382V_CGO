@@ -1,0 +1,43 @@
+
+******  DataFlow Result for function br  ******
+{ s2 s1 s }
+entry:
+  %cmp = icmp sgt i32 %s, 0
+  br i1 %cmp, label %if.then, label %if.else
+{ s2 cmp s1 s }
+---
+{ s s1 cmp s2 }
+if.then:                                          ; preds = %entry
+  %call = call i32 (i32, ...) @f(i32 %s)
+  br label %if.end6
+{ call s s1 cmp s2 }
+---
+{ s s1 cmp s2 }
+if.else:                                          ; preds = %entry
+  %cmp1 = icmp slt i32 %s, 0
+  br i1 %cmp1, label %if.then2, label %if.else4
+{ cmp1 s s1 cmp s2 }
+---
+{ s2 cmp s1 s cmp1 }
+if.then2:                                         ; preds = %if.else
+  %sub = sub nsw i32 0, %s
+  %call3 = call i32 (i32, ...) @f(i32 %sub, i32 %s1)
+  br label %if.end
+{ call3 s2 cmp s1 s sub cmp1 }
+---
+{ s2 cmp s1 s cmp1 }
+if.else4:                                         ; preds = %if.else
+  %call5 = call i32 (i32, ...) @f(i32 0)
+  br label %if.end
+{ call5 s2 cmp s1 s cmp1 }
+---
+{ call3 call5 s2 cmp s1 s sub cmp1 }
+if.end:                                           ; preds = %if.else4, %if.then2
+  br label %if.end6
+{ call3 call5 s2 cmp s1 s sub cmp1 }
+---
+{ call3 call call5 s2 cmp s1 s sub cmp1 }
+if.end6:                                          ; preds = %if.end, %if.then
+  ret i32 %s
+{ call3 call call5 s2 cmp s1 s sub cmp1 }
+---

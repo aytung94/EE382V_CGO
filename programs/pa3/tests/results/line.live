@@ -1,0 +1,14 @@
+
+******  DataFlow Result for function line  ******
+{ }
+entry:
+  %call = call i32 @s(i32 1)
+  %call1 = call i32 @s(i32 2)
+  %call2 = call i32 @bop(i32 %call, i32 %call1)
+  %call3 = call i32 @s(i32 %call2)
+  %add = add nsw i32 %call, %call1
+  store i32 %add, i32* @global, align 4
+  %call4 = call i32 @s(i32 %call3)
+  ret i32 %call4
+{ }
+---
