@@ -1,0 +1,45 @@
+rm -f *.o *~ *.so *.ll *.bc *.out ready/* *.jpeg *.dot
+clang++ -I/usr/local/include  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wmissing-field-initializers -pedantic -Wno-long-long -Wcovered-switch-default -Wnon-virtual-dtor -Wdelete-non-virtual-dtor -Werror=date-time -std=c++11 -ffunction-sections -fdata-sections -O3 -DNDEBUG  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti InstrumentPass.cpp -c -o InstrumentPass.o
+clang++ -shared InstrumentPass.o -o instrument.so
+1       5       ->Exit
+1       4       ->->->->->->Exit
+1       3       ->->->->->->->->->->Exit
+1       2       ->->->->->->->->->Exit
+1       1       ->->->->->->->->->->Exit
+1       0       ->->->->->->->->->Exit
+False
+Pancakes
+Finn
+True
+Lady Rainicorn
+False
+Bacon
+Finn
+False
+Bacon
+Jake
+Lady Rainicorn
+True
+Lady Rainicorn
+False
+Bacon
+Finn
+False
+Bacon
+Finn
+True
+Lady Rainicorn
+False
+Bacon
+Jake
+Lady Rainicorn
+False
+Bacon
+Finn
+
+LoopID: PathID: Value:
+1       5       1     
+1       2       1     
+1       4       3     
+1       0       4     
+1       1       2     

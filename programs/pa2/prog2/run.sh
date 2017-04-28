@@ -4,7 +4,7 @@
 
 mkdir -p ready
 make clean && make
-clang++ test/$1.cc -I. -c -emit-llvm -O0
+clang++ test/test/$1.cc -I. -c -emit-llvm -O0
 opt -dce -mem2reg -break-crit-edges -loop-simplify $1.bc -o ready/$1.bc
 
 opt -dot-cfg -load ./instrument.so -epp ready/$1.bc -o output.bc > path-desc.ll
@@ -16,6 +16,6 @@ clang++ output.bc ./libepp_runtime.a -o a.out
 ./a.out $2 > path-prof.ll
 cat *.ll
 
-dot -Tjpeg cfg.main.dot -o $1.jpeg
+#dot -Tjpeg cfg.main.dot -o $1.jpeg
 
 

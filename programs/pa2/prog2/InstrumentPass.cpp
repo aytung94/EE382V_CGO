@@ -103,12 +103,10 @@ if(loopId == 1)
                 }            
                 outs() << "\n";
         }
-#endif         
-    }
+#endif  
+
+       
 #if PRINT_DEBUG == 1    
-    else{
-        outs() << "OUTER LOOP SKIP:\n"; 
-    }
    
     outs() << "\nPrint Edge Values:\n";
 
@@ -248,6 +246,11 @@ if(loopId == 1)
     indP = 0;
     printPaths(*header, header->getName(), 0, *Exit ,pathGraph);
 
+    }
+    else{
+        outs() << "OUTER LOOP SKIP:\n"; 
+    }
+    
     // Increment Loop ID 
     loopId++;
 

@@ -24,7 +24,7 @@ extern "C" void init_path_reg(int loopId){
     }
 }
 extern "C" void inc_path_reg(int loopId, int val){
-//  cout << loopId << "increment me by " << val <<  "! ";/
+//  cout << loopId << "increment me by " << val <<  "! ";
 //  cout << "incrementing path by " << val << " for loop: " << loopId << "\n";
 
     r[loopId] += val;
@@ -43,7 +43,7 @@ extern "C" void finalize_path_reg(int loopId){
 }
 
 extern "C" void dump_path_regs(){
-//    printf("\nLoopID: PathID: Value:\n");
+    printf("\nLoopID: PathID: Value:\n");    
 
     for(auto itP = path_profile.begin(); itP != path_profile.end(); itP++){       
         for(auto itR = itP->second.begin(); itR != itP->second.end(); itR++){
